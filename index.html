@@ -506,6 +506,10 @@ function buildTopbarActions(t){
 function buildStockAct(){
   const el=document.getElementById('stock-act-slot');if(!el)return;
   const nb=Object.keys(PE).length;
+  if(UI.selGym==='tous'){
+    el.innerHTML=`<div class="flex"><button class="btn btn-p btn-sm" onclick="openModal('addMat')"><i class="ti ti-plus" aria-hidden="true"></i> Matériel</button></div>`;
+    return;
+  }
   if(UI.editMode){
     el.innerHTML=`<div class="flex"><button class="btn btn-sm" onclick="cancelEdit()"><i class="ti ti-x" aria-hidden="true"></i> Annuler</button>
     <button class="btn btn-s btn-sm" id="save-btn" onclick="applyEdits()" ${nb===0?'disabled':''}><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer ${nb>0?`(${nb})`:''}</button>
@@ -618,18 +622,89 @@ function rStock(){
   const gid=UI.selGym;const c=cats();const ed=UI.editMode;const nb=Object.keys(PE).length;
   return `
   <div class="gym-scroll">
+    <button class="gym-chip ${'tous'===gid?'active':''}" onclick="selGym('tous')">🏆 Tous</button>
     ${DB.gymnases.map(g=>`<button class="gym-chip ${gid===g.id?'active':''}" onclick="selGym('${g.id}')">${isMob()?g.nom.split(' ').slice(0,2).join(' '):g.nom}</button>`).join('')}
   </div>
-  ${ed?`<div class="edit-bar"><i class="ti ti-pencil-minus" aria-hidden="true"></i><span>Modifiez noms, catégories et quantités</span><div class="sp"></div>${nb>0?`<span style="font-weight:500">${nb} modif.</span>`:''}</div>`:``}
-  ${isMob()&&ed?`<div class="flex" style="margin-bottom:10px">
+  ${gid!=='tous' && ed?`<div class="edit-bar"><i class="ti ti-pencil-minus" aria-hidden="true"></i><span>Modifiez noms, catégories et quantités</span><div class="sp"></div>${nb>0?`<span style="font-weight:500">${nb} modif.</span>`:''}</div>`:``}
+  ${gid!=='tous' && isMob()&&ed?`<div class="flex" style="margin-bottom:10px">
     <button class="btn btn-sm" style="flex:1" onclick="cancelEdit()"><i class="ti ti-x" aria-hidden="true"></i> Annuler</button>
     <button class="btn btn-s btn-sm" style="flex:2" id="save-btn-m" onclick="applyEdits()" ${nb===0?'disabled':''}><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer ${nb>0?`(${nb})`:''}</button>
   </div>`:''}
-  ${isMob()&&!ed?`<div class="flex" style="margin-bottom:10px">
+  ${gid!=='tous' && isMob()&&!ed?`<div class="flex" style="margin-bottom:10px">
     <button class="btn btn-sm" style="flex:1" onclick="toggleEdit()"><i class="ti ti-pencil" aria-hidden="true"></i> Modifier</button>
     <button class="btn btn-p btn-sm" style="flex:1" onclick="openModal('addMat')"><i class="ti ti-plus" aria-hidden="true"></i> Matériel</button>
   </div>`:''}
-  ${Object.entries(c).map(([cat,items])=>rCatSection(cat,items,gid,ed)).join('')}`;
+  ${gid==='tous' ? rTous(c) : Object.entries(c).map(([cat,items])=>rCatSection(cat,items,gid,ed)).join('')}\`;
+}
+
+// ── VUE TOUS LES GYMNASES ──
+function rTous(c){
+  const grandTotal = DB.materiels.reduce((a,m)=>a+totM(m.id),0);
+  return `
+  <div style="margin-bottom:12px;padding:10px 14px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:var(--r2);display:flex;align-items:center;justify-content:space-between">
+    <span style="font-size:13px;font-weight:500;color:var(--blue-txt)"><i class="ti ti-package" aria-hidden="true"></i> Total général — tous gymnases</span>
+    <span style="font-size:20px;font-weight:500;color:var(--blue-txt)">${grandTotal} pièces</span>
+  </div>
+  ${Object.entries(c).map(([cat,items])=>{
+    const catTotal=items.reduce((a,m)=>a+totM(m.id),0);
+    const isOpen=UI.openCats['tous_'+cat]!==false;
+    const key=('tous_'+cat).replace(/\s/g,'_');
+    const hasRupt=items.some(m=>totM(m.id)===0);
+    const hasSlow=items.some(m=>{const q=totM(m.id);return q>0&&q<4;});
+    return \`<div class="cat-section">
+      <div class="cat-hdr" onclick="togCatTous('${cat}')">
+        <span class="cat-icon" style="${cs(cat)}"><i class="ti ${ci(cat)}" aria-hidden="true"></i></span>
+        <span class="cat-title">${cat}</span>
+        \${hasRupt?'<span class="badge br">Rupture</span>':hasSlow?'<span class="badge ba">Faible</span>':''}
+        <span class="badge bb">\${catTotal} total</span>
+        <i class="ti ti-chevron-down cat-chev \${isOpen?'open':''}" id="chev-tous-\${key}" aria-hidden="true"></i>
+      </div>
+      <div class="cat-body \${isOpen?'':'hidden'}" id="cb-tous-\${key}">
+        <table>
+          <thead><tr>
+            <th>Matériel</th>
+            \${DB.gymnases.map(g=>\`<th style="text-align:center">\${isMob()?g.nom.split(' ')[0]:g.nom}</th>\`).join('')}
+            <th style="text-align:center;color:var(--blue-txt)">Total</th>
+          </tr></thead>
+          <tbody>
+            \${items.map(m=>{
+              const total=totM(m.id);
+              const st=total===0?'br':total<4?'ba':'bg';
+              return \`<tr>
+                <td style="font-weight:500">\${m.nom}</td>
+                \${DB.gymnases.map(g=>{
+                  const q=gs(g.id,m.id);
+                  const s=q===0?'br':q<3?'ba':'bg';
+                  return \`<td style="text-align:center"><span class="badge \${s}">\${q}</span></td>\`;
+                }).join('')}
+                <td style="text-align:center"><span class="badge \${st}" style="font-size:12px;font-weight:700">\${total}</span></td>
+              </tr>\`;
+            }).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="background:var(--bg3)">
+              <td style="font-weight:500;font-size:12px">Total catégorie</td>
+              \${DB.gymnases.map(g=>{
+                const t=items.reduce((a,m)=>a+gs(g.id,m.id),0);
+                return \`<td style="text-align:center;font-weight:500">\${t}</td>\`;
+              }).join('')}
+              <td style="text-align:center;font-weight:700;color:var(--blue-txt)">\${catTotal}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>\`;
+  }).join('')}`;
+}
+
+function togCatTous(cat){
+  const key=('tous_'+cat).replace(/\s/g,'_');
+  const b=document.getElementById(\`cb-tous-\${key}\`);
+  const c=document.getElementById(\`chev-tous-\${key}\`);
+  if(!b)return;
+  const open=!b.classList.contains('hidden');
+  b.classList.toggle('hidden',open);c.classList.toggle('open',!open);
+  UI.openCats['tous_'+cat]=!open;
 }
 
 function rCatSection(cat,items,gid,ed){

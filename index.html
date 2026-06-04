@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SportStock</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f4f3ef;--bg2:#fff;--bg3:#eeede8;
+  --txt:#1a1a18;--txt2:#6b6a63;--txt3:#9b9a93;
+  --border:#e2e1d8;--border2:#c8c7be;
+  --blue:#1a6fc4;--blue-bg:#e8f1fb;--blue-txt:#0c447c;
+  --green:#3b6d11;--green-bg:#eaf3de;--green-txt:#27500a;
+  --amber:#854f0b;--amber-bg:#faeeda;--amber-txt:#633806;
+  --red:#a32d2d;--red-bg:#fcebeb;--red-txt:#791f1f;
+  --r:8px;--r2:12px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --sidebar-w:220px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#252523;--bg3:#2a2a28;
+  --txt:#e8e7e0;--txt2:#9b9a93;--txt3:#6b6a63;
+  --border:#3a3a37;--border2:#4a4a47;
+}}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5;overscroll-behavior:none}
+
+/* ── DESKTOP layout ── */
+#shell{display:flex;height:100vh;overflow:hidden}
+#sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--bg2);border-right:0.5px solid var(--border);display:flex;flex-direction:column}
+.sb-logo{padding:16px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--border)}
+.sb-logo h1{font-size:15px;font-weight:500}
+.sb-logo small{font-size:11px;color:var(--txt2)}
+.sb-nav{padding:6px 0;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;color:var(--txt2);background:none;border:none;width:100%;font-family:inherit;text-align:left;transition:background .12s,color .12s}
+.nav-item:hover{background:var(--bg3);color:var(--txt)}
+.nav-item.active{background:var(--blue-bg);color:var(--blue-txt);font-weight:500}
+.nav-item i{font-size:18px}
+.sb-footer{padding:10px 16px;border-top:0.5px solid var(--border);font-size:11px;color:var(--txt3)}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{background:var(--bg2);border-bottom:0.5px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:12px;height:52px;flex-shrink:0}
+#page-title{font-size:15px;font-weight:500;flex:1}
+#topbar-actions{display:flex;align-items:center;gap:8px}
+#content{flex:1;overflow-y:auto;padding:20px 24px}
+
+/* ── MOBILE layout ── */
+#shell-mobile{display:none;flex-direction:column;height:100vh;max-width:430px;margin:0 auto;background:var(--bg)}
+#topbar-mobile{background:var(--bg2);border-bottom:0.5px solid var(--border);padding:11px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+#topbar-mobile h1{font-size:16px;font-weight:500;flex:1}
+#content-mobile{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 10px calc(74px + var(--safe-bottom))}
+#botnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--bg2);border-top:0.5px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:100}
+.bnav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;cursor:pointer;background:none;border:none;color:var(--txt2);font-size:10px;font-family:inherit}
+.bnav-tab i{font-size:21px}
+.bnav-tab.active{color:var(--blue)}
+#fab{position:fixed;bottom:calc(66px + var(--safe-bottom) + 12px);right:14px;width:48px;height:48px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:90;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+
+/* ── responsive ── */
+@media(max-width:650px){
+  #shell{display:none}
+  #shell-mobile{display:flex}
+  #fab{display:flex}
+}
+@media(min-width:651px){
+  #fab{display:none}
+}
+
+/* ── sync indicator ── */
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background .3s}
+.sync-dot.syncing{background:var(--amber);animation:pulse .8s infinite}
+.sync-dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── loading ── */
+#loading{position:fixed;inset:0;background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:500;gap:12px}
+#loading h2{font-size:16px;font-weight:500}
+#loading p{font-size:13px;color:var(--txt2)}
+.spinner{width:32px;height:32px;border:2.5px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── components ── */
+.card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r2);padding:16px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:650px){.metrics{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}}
+.metric-card{background:var(--bg3);border-radius:var(--r);padding:13px}
+.metric-label{font-size:11px;color:var(--txt2);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}
+.metric-val{font-size:24px;font-weight:500;line-height:1}
+.metric-sub{font-size:10px;color:var(--txt3);margin-top:2px}
+
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.bg{background:var(--green-bg);color:var(--green-txt)}
+.ba{background:var(--amber-bg);color:var(--amber-txt)}
+.br{background:var(--red-bg);color:var(--red-txt)}
+.bb{background:var(--blue-bg);color:var(--blue-txt)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 13px;height:34px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:13px;cursor:pointer;background:var(--bg2);color:var(--txt);font-family:inherit;transition:opacity .12s;white-space:nowrap;-webkit-appearance:none}
+.btn:hover{opacity:.85}
+.btn:active{opacity:.65}
+.btn-p{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
+.btn-s{background:var(--green);border-color:var(--green);color:#fff;font-weight:500}
+.btn-d{background:var(--red-bg);border-color:var(--red);color:var(--red-txt)}
+.btn-ok{background:var(--green-bg);border-color:var(--green);color:var(--green-txt)}
+.btn-sm{height:30px;padding:0 10px;font-size:12px}
+.btn-xs{height:26px;padding:0 8px;font-size:11px}
+.btn-ico{width:30px;height:30px;padding:0}
+.btn-ico-sm{width:34px;height:34px;padding:0}
+.btn-full{width:100%}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+@media(max-width:650px){.btn{height:42px;font-size:14px}.btn-sm{height:36px}.btn-xs{height:30px;font-size:12px}}
+
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-title{font-size:15px;font-weight:500}
+
+.tbl-wrap{border:0.5px solid var(--border);border-radius:var(--r2);overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:400px}
+th{text-align:left;padding:8px 14px;background:var(--bg3);border-bottom:0.5px solid var(--border);font-size:11px;font-weight:500;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+td{padding:8px 14px;border-bottom:0.5px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+
+.bar-wrap{width:100%;background:var(--bg3);border-radius:20px;height:5px;overflow:hidden;margin-top:4px}
+.bar{height:100%;border-radius:20px}
+
+.alert{padding:10px 14px;border-radius:var(--r);font-size:13px;display:flex;align-items:flex-start;gap:8px;margin-bottom:12px}
+.alert-amber{background:var(--amber-bg);color:var(--amber-txt);border:0.5px solid var(--amber)}
+
+.cat-section{margin-bottom:10px;border:0.5px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.cat-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);cursor:pointer;user-select:none;transition:background .12s}
+.cat-hdr:hover{background:var(--bg3)}
+.cat-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.cat-title{flex:1;font-size:13px;font-weight:500}
+.cat-chev{color:var(--txt3);font-size:16px;transition:transform .2s;flex-shrink:0}
+.cat-chev.open{transform:rotate(180deg)}
+.cat-body{border-top:0.5px solid var(--border)}
+
+.stock-row{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:0.5px solid var(--border)}
+.stock-row:last-child{border-bottom:none}
+.stock-name{flex:1;font-size:13px;min-width:0}
+.stock-qty{font-size:14px;font-weight:500;min-width:30px;text-align:right}
+
+.stepper{display:flex;align-items:center}
+.sb{width:30px;height:30px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--txt);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:background .1s;-webkit-appearance:none}
+.sb:first-child{border-radius:var(--r) 0 0 var(--r)}
+.sb:last-child{border-radius:0 var(--r) var(--r) 0}
+.sb:active{background:var(--bg3)}
+.si{width:48px;height:30px;border:0.5px solid var(--border2);border-left:none;border-right:none;background:var(--bg2);color:var(--txt);font-size:13px;font-weight:500;text-align:center;font-family:inherit;outline:none;-webkit-appearance:none}
+.si:focus{border-color:var(--blue)}
+.si.chg{border-color:var(--amber);background:var(--amber-bg);color:var(--amber-txt)}
+@media(max-width:650px){
+  .sb{width:34px;height:34px;font-size:18px}
+  .si{width:52px;height:34px;font-size:14px}
+}
+
+.gym-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
+.gym-scroll::-webkit-scrollbar{display:none}
+.gym-chip{flex-shrink:0;padding:5px 13px;border:0.5px solid var(--border2);border-radius:20px;font-size:13px;cursor:pointer;background:var(--bg2);color:var(--txt2);font-family:inherit;white-space:nowrap;transition:all .12s;-webkit-appearance:none}
+.gym-chip.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.gym-chip:active{opacity:.7}
+
+.edit-bar{display:flex;align-items:center;gap:8px;padding:9px 13px;background:var(--amber-bg);border:0.5px solid var(--amber);border-radius:var(--r);margin-bottom:12px;font-size:13px;color:var(--amber-txt);flex-wrap:wrap}
+.edit-bar .sp{flex:1}
+.ie{border:0.5px solid var(--blue);border-radius:var(--r);padding:4px 8px;font-size:13px;background:var(--bg2);color:var(--txt);outline:none;font-family:inherit}
+.ie:focus{box-shadow:0 0 0 2px var(--blue-bg)}
+
+.log-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:0.5px solid var(--border);background:var(--bg2)}
+.log-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.log-take{background:var(--amber-bg);color:var(--amber-txt)}
+.log-return{background:var(--green-bg);color:var(--green-txt)}
+.log-edit{background:var(--bg3);color:var(--txt2)}
+.log-body{flex:1;min-width:0}
+.log-title{font-size:13px;font-weight:500}
+.log-meta{font-size:11px;color:var(--txt3);margin-top:1px}
+.log-rp{display:flex;align-items:center;gap:8px;padding:5px 14px 8px 54px;border-bottom:0.5px solid var(--border);background:var(--bg2)}
+.log-rd{display:flex;align-items:center;gap:7px;padding:5px 14px 8px 54px;border-bottom:0.5px solid var(--border);background:var(--bg2)}
+.rdot{width:20px;height:20px;border-radius:50%;background:var(--green-bg);color:var(--green-txt);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.btn-ri{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 11px;border:0.5px solid var(--green);border-radius:20px;background:var(--green-bg);color:var(--green-txt);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .12s}
+.btn-ri:hover{opacity:.8}
+
+/* ── modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r2);width:100%;max-width:460px;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px 12px;border-bottom:0.5px solid var(--border)}
+.modal-head h3{font-size:15px;font-weight:500}
+.modal-body{padding:16px 18px}
+.modal-foot{padding:0 18px 16px;display:flex;gap:8px;justify-content:flex-end}
+@media(max-width:650px){
+  .modal-overlay{align-items:flex-end}
+  .modal{max-width:100%;border-radius:16px 16px 0 0;max-height:92vh}
+  .modal::before{content:'';display:block;width:34px;height:4px;background:var(--border2);border-radius:2px;margin:9px auto 2px}
+  .modal-foot{flex-direction:column}
+  .modal-foot .btn{width:100%;height:44px}
+}
+.recap{background:var(--green-bg);border:0.5px solid var(--green);border-radius:var(--r);padding:11px;margin-bottom:13px}
+.recap-title{font-size:13px;font-weight:500;color:var(--green-txt);margin-bottom:5px}
+.recap-row{display:flex;justify-content:space-between;font-size:12px;color:var(--green-txt);margin-bottom:2px}
+
+.fg{margin-bottom:13px}
+.fl{display:block;font-size:12px;font-weight:500;color:var(--txt2);margin-bottom:4px}
+.fi{width:100%;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:13px;background:var(--bg2);color:var(--txt);outline:none;font-family:inherit;-webkit-appearance:none}
+.fi:focus{border-color:var(--blue)}
+select.fi{cursor:pointer}
+@media(max-width:650px){.fi{padding:11px 12px;font-size:15px}}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:650px){.form-grid{grid-template-columns:1fr}}
+.mat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+@media(max-width:650px){.mat-grid{grid-template-columns:1fr}}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--txt);color:var(--bg2);padding:10px 18px;border-radius:var(--r);font-size:13px;z-index:400;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:650px){
+  .toast{bottom:calc(72px + var(--safe-bottom));left:50%;right:auto;transform:translateX(-50%) translateY(16px)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+}
+
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.dash-grid{grid-template-columns:1fr}}
+
+.hidden{display:none}
+.mt8{margin-top:8px}.mt12{margin-top:12px}
+.flex{display:flex;align-items:center;gap:8px}
+.txt2{color:var(--txt2)}.txt3{color:var(--txt3);font-size:11px}
+.global-save-btn{transition:all .2s}
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loading">
+  <div class="spinner"></div>
+  <h2>SportStock</h2>
+  <p>Connexion en cours…</p>
+</div>
+
+<!-- DESKTOP -->
+<div id="shell">
+  <aside id="sidebar">
+    <div class="sb-logo">
+      <i class="ti ti-ball-football" style="font-size:22px;color:var(--blue)" aria-hidden="true"></i>
+      <div><h1>SportStock</h1><small>Temps réel</small></div>
+    </div>
+    <nav class="sb-nav">
+      <button class="nav-item active" onclick="showTab('dashboard')" id="nav-dashboard"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Tableau de bord</button>
+      <button class="nav-item" onclick="showTab('gymnases')" id="nav-gymnases"><i class="ti ti-building-community" aria-hidden="true"></i>Gymnases</button>
+      <button class="nav-item" onclick="showTab('stock')" id="nav-stock"><i class="ti ti-package" aria-hidden="true"></i>Stock</button>
+      <button class="nav-item" onclick="showTab('mouvements')" id="nav-mouvements"><i class="ti ti-arrows-exchange" aria-hidden="true"></i>Mouvements</button>
+    </nav>
+    <div class="sb-footer" id="d-sync-status">
+      <span class="sync-dot" id="d-sync-dot"></span> <span id="d-sync-txt">Synchronisé</span>
+    </div>
+  </aside>
+  <div id="main">
+    <div id="topbar">
+      <span id="page-title">Tableau de bord</span>
+      <div id="topbar-actions"></div>
+      <button class="btn btn-s btn-sm global-save-btn" id="global-save-d" onclick="forceSave()" title="Forcer la synchronisation"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+
+<!-- MOBILE -->
+<div id="shell-mobile">
+  <div id="topbar-mobile">
+    <i class="ti ti-ball-football" style="font-size:20px;color:var(--blue)" aria-hidden="true"></i>
+    <h1>SportStock</h1>
+    <button class="btn btn-s global-save-btn" id="global-save-m" onclick="forceSave()" style="height:32px;padding:0 10px;font-size:12px"><i class="ti ti-device-floppy"></i></button>
+    <span class="sync-dot" id="m-sync-dot"></span>
+  </div>
+  <div id="content-mobile"></div>
+  <nav id="botnav">
+    <button class="bnav-tab active" onclick="showTab('dashboard')" id="m-nav-dashboard"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Accueil</button>
+    <button class="bnav-tab" onclick="showTab('gymnases')" id="m-nav-gymnases"><i class="ti ti-building-community" aria-hidden="true"></i>Gymnases</button>
+    <button class="bnav-tab" onclick="showTab('stock')" id="m-nav-stock"><i class="ti ti-package" aria-hidden="true"></i>Stock</button>
+    <button class="bnav-tab" onclick="showTab('mouvements')" id="m-nav-mouvements"><i class="ti ti-arrows-exchange" aria-hidden="true"></i>Mouvements</button>
+  </nav>
+</div>
+<button id="fab" onclick="fabAction()" aria-label="Action"><i class="ti ti-plus" aria-hidden="true"></i></button>
+
+<div id="modal-root"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// ══════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════
+const SB_URL = 'https://xqvopuhuurcspvqheqpv.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxdm9wdWh1dXJjc3B2cWhlcXB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NjU2MjgsImV4cCI6MjA5NjE0MTYyOH0.JUaTWo5HK4_3nKrh0w_H6YH7Rcz819VgZ_LlXO0yvss';
+const H = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'};
+
+async function sbGet(table, params=''){
+  const r = await fetch(`${SB_URL}/rest/v1/${table}${params}`, {
+    headers:{...H,'Prefer':'','Accept':'application/json'}
+  });
+  if(!r.ok){
+    const txt = await r.text();
+    throw new Error(`${table}: ${r.status} ${txt}`);
+  }
+  return r.json();
+}
+async function sbPost(table, data){
+  const r = await fetch(`${SB_URL}/rest/v1/${table}`, {
+    method:'POST',
+    headers:{...H,'Prefer':'return=minimal','Accept':'application/json'},
+    body:JSON.stringify(data)
+  });
+  if(!r.ok){
+    const txt = await r.text();
+    throw new Error(`POST ${table}: ${r.status} ${txt}`);
+  }
+}
+async function sbPatch(table, data, filter){
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${filter}`, {method:'PATCH',headers:H,body:JSON.stringify(data)});
+  if(!r.ok) throw new Error(await r.text());
+}
+async function sbUpsert(table, data){
+  const r = await fetch(`${SB_URL}/rest/v1/${table}`, {method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(data)});
+  if(!r.ok) throw new Error(await r.text());
+}
+async function sbDelete(table, filter){
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${filter}`, {method:'DELETE',headers:H});
+  if(!r.ok) throw new Error(await r.text());
+}
+
+// ══════════════════════════════════════
+// STATE (local cache, synced with DB)
+// ══════════════════════════════════════
+let DB = { gymnases:[], materiels:[], stocks:{}, mouvements:[] };
+let UI = { tab:'dashboard', selGym:null, editMode:false, openCats:{} };
+let PE = {};
+let syncTimer = null;
+let realtimeChannel = null;
+
+// ══════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════
+const gs = (g,m) => DB.stocks[`${g}_${m}`] || 0;
+const totM = m => DB.gymnases.reduce((a,g)=>a+gs(g.id,m),0);
+const totG = g => DB.materiels.reduce((a,m)=>a+gs(g,m.id),0);
+const nowStr = () => new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+const uid = () => Math.random().toString(36).slice(2,9);
+const cats = () => { const c={}; DB.materiels.forEach(m=>{(c[m.categorie]||(c[m.categorie]=[])).push(m);}); return c; };
+
+const CI={Basketball:'ti-ball-basketball',Football:'ti-ball-football',Volleyball:'ti-ball-volleyball',Handball:'ti-ball',Gymnastique:'ti-yoga',Fitness:'ti-run',Natation:'ti-ripple',Tennis:'ti-ball-tennis'};
+const CC={Basketball:'var(--amber-bg)',Football:'var(--green-bg)',Volleyball:'var(--blue-bg)',Handball:'#e1f5ee',Gymnastique:'#f0e8fb',Fitness:'var(--red-bg)'};
+const CT={Basketball:'var(--amber-txt)',Football:'var(--green-txt)',Volleyball:'var(--blue-txt)',Handball:'#0f6e56',Gymnastique:'#533489',Fitness:'var(--red-txt)'};
+const ci = c => CI[c]||'ti-box';
+const cs = c => `background:${CC[c]||'var(--bg3)'};color:${CT[c]||'var(--txt2)'}`;
+
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2400);
+}
+function setSyncStatus(s){
+  ['d-sync-dot','m-sync-dot'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.className='sync-dot'+(s==='syncing'?' syncing':s==='error'?' error':'');
+  });
+  const sf=document.getElementById('d-sync-status');
+  if(sf)sf.innerHTML=`<span class="sync-dot${s==='syncing'?' syncing':s==='error'?' error':''}"></span> <span>${s==='syncing'?'Enregistrement…':s==='error'?'Erreur réseau':'✓ Enregistré'}</span>`;
+  // Update save buttons
+  document.querySelectorAll('.global-save-btn').forEach(b=>{
+    if(s==='syncing'){b.innerHTML='<i class="ti ti-loader" style="animation:spin .8s linear infinite"></i> Enregistrement…';b.disabled=true;b.classList.remove('btn-s');b.style.background='var(--amber)';b.style.borderColor='var(--amber)';}
+    else if(s==='ok'){b.innerHTML='<i class="ti ti-check"></i> Enregistré';b.disabled=false;b.classList.add('btn-s');b.style.background='';b.style.borderColor='';}
+    else{b.innerHTML='<i class="ti ti-alert-triangle"></i> Erreur';b.disabled=false;b.classList.remove('btn-s');b.style.background='var(--red)';b.style.borderColor='var(--red)';}
+  });
+}
+const isMob = () => window.innerWidth <= 650;
+function getContent(){ return document.getElementById(isMob()?'content-mobile':'content'); }
+
+// ══════════════════════════════════════
+// INITIAL LOAD + SEED
+// ══════════════════════════════════════
+async function loadAll(){
+  setSyncStatus('syncing');
+  document.getElementById('loading').style.display='flex';
+  try {
+    // Load one by one to better diagnose issues
+    const gyms = await sbGet('gymnases','?order=nom');
+    const mats = await sbGet('materiels','?order=nom');
+    const stks = await sbGet('stocks');
+    const mvts = await sbGet('mouvements','?order=created_at.desc&limit=200');
+
+    DB.gymnases = gyms || [];
+    DB.materiels = mats || [];
+    DB.stocks = {};
+    (stks||[]).forEach(s => { DB.stocks[`${s.gym_id}_${s.mat_id}`] = s.qte; });
+    DB.mouvements = (mvts||[]).map(m=>({
+      id:m.id, type:m.type, gymId:m.gym_id, matId:m.mat_id,
+      gymNom:m.gym_nom||'', matNom:m.mat_nom||'', qte:m.qte||0,
+      personne:m.personne||'', note:m.note||'', date:m.date_str||'',
+      oldQty:m.old_qty||0, newQty:m.new_qty||0
+    }));
+
+    // Seed si vide
+    if(DB.gymnases.length===0){
+      await seedData();
+      await loadAll();
+      return;
+    }
+
+    if(!UI.selGym && DB.gymnases.length>0) UI.selGym = DB.gymnases[0].id;
+    // Init open cats
+    const c = cats();
+    Object.keys(c).forEach(k=>{ if(UI.openCats[k]===undefined) UI.openCats[k]=true; });
+
+    setSyncStatus('ok');
+    document.getElementById('loading').style.display='none';
+    render(UI.tab);
+    buildTopbarActions(UI.tab);
+    setupRealtime();
+  } catch(e){
+    setSyncStatus('error');
+    document.getElementById('loading').innerHTML=`
+      <div class="spinner" style="border-top-color:var(--red)"></div>
+      <h2 style="color:var(--red)">Erreur de connexion</h2>
+      <p style="text-align:center;max-width:280px">${e.message||'Vérifiez votre connexion internet'}</p>
+      <button class="btn btn-p" style="margin-top:14px" onclick="loadAll()"><i class="ti ti-refresh"></i> Réessayer</button>`;
+    console.error('loadAll error:', e);
+  }
+}
+
+async function seedData(){
+  const gyms = [{id:'g1',nom:'Gymnase Pasteur'},{id:'g2',nom:'Salle Olympique'},{id:'g3',nom:'Centre Sportif Nord'}];
+  const mats = [
+    {id:'m1',nom:'Ballon de basket',categorie:'Basketball'},
+    {id:'m2',nom:'Ballon de foot',categorie:'Football'},
+    {id:'m3',nom:'Filet de volley',categorie:'Volleyball'},
+    {id:'m4',nom:'Tapis de gym',categorie:'Gymnastique'},
+    {id:'m5',nom:'Corde à sauter',categorie:'Fitness'},
+    {id:'m6',nom:'Ballon de handball',categorie:'Handball'},
+  ];
+  const stks = [];
+  const initQ = {'g1_m1':12,'g1_m2':8,'g1_m3':2,'g1_m4':15,'g1_m5':20,'g1_m6':6,'g2_m1':18,'g2_m2':14,'g2_m3':4,'g2_m4':10,'g2_m5':30,'g2_m6':10,'g3_m1':6,'g3_m2':5,'g3_m3':1,'g3_m4':8,'g3_m5':12,'g3_m6':4};
+  gyms.forEach(g=>mats.forEach(m=>stks.push({gym_id:g.id,mat_id:m.id,qte:initQ[`${g.id}_${m.id}`]||0})));
+  await sbUpsert('gymnases', gyms);
+  await sbUpsert('materiels', mats);
+  await sbUpsert('stocks', stks);
+}
+
+// ══════════════════════════════════════
+// REALTIME (polling toutes les 10s)
+// ══════════════════════════════════════
+function setupRealtime(){
+  clearInterval(realtimeChannel);
+  realtimeChannel = setInterval(async ()=>{
+    try {
+      const [stks, mvts] = await Promise.all([
+        sbGet('stocks'),
+        sbGet('mouvements','?order=created_at.desc&limit=200')
+      ]);
+      DB.stocks={};
+      stks.forEach(s=>{DB.stocks[`${s.gym_id}_${s.mat_id}`]=s.qte;});
+      DB.mouvements=mvts.map(m=>({
+        id:m.id,type:m.type,gymId:m.gym_id,matId:m.mat_id,
+        gymNom:m.gym_nom,matNom:m.mat_nom,qte:m.qte,
+        personne:m.personne,note:m.note||'',date:m.date_str,
+        oldQty:m.old_qty,newQty:m.new_qty
+      }));
+      setSyncStatus('ok');
+      // Re-render silencieux (sans reset scroll)
+      const el=getContent();const sc=el.scrollTop;
+      render(UI.tab);el.scrollTop=sc;
+    } catch(e){ setSyncStatus('error'); }
+  }, 10000);
+}
+
+// ══════════════════════════════════════
+// RETOUR MAP
+// ══════════════════════════════════════
+function retourMap(){
+  const m={};const u=new Set();
+  DB.mouvements.filter(x=>x.type==='prise').forEach(p=>{
+    const r=DB.mouvements.filter(x=>x.type==='retour').find(r=>r.matId===p.matId&&r.gymId===p.gymId&&r.personne.trim().toLowerCase()===p.personne.trim().toLowerCase()&&r.date>=p.date&&!u.has(r.id));
+    if(r){m[p.id]=r;u.add(r.id);}
+  });
+  return{m,u};
+}
+
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+const TAB_LABELS = {dashboard:'Tableau de bord',gymnases:'Gymnases',stock:'Stock',mouvements:'Mouvements'};
+
+function showTab(t){
+  UI.tab=t;if(t!=='stock'){UI.editMode=false;PE={};}
+  ['dashboard','gymnases','stock','mouvements'].forEach(x=>{
+    const d=document.getElementById(`nav-${x}`);if(d)d.classList.toggle('active',x===t);
+    const m=document.getElementById(`m-nav-${x}`);if(m)m.classList.toggle('active',x===t);
+  });
+  document.getElementById('page-title').textContent=TAB_LABELS[t];
+  buildTopbarActions(t);
+  render(t);
+  getContent().scrollTop=0;
+}
+
+function buildTopbarActions(t){
+  const slot=document.getElementById('topbar-actions');if(!slot)return;
+  if(t==='dashboard')slot.innerHTML=`<button class="btn btn-p btn-sm" onclick="openModal('mvt')"><i class="ti ti-plus" aria-hidden="true"></i> Mouvement</button>`;
+  else if(t==='gymnases')slot.innerHTML=`<button class="btn btn-p btn-sm" onclick="openModal('addGym')"><i class="ti ti-plus" aria-hidden="true"></i> Gymnase</button>`;
+  else if(t==='stock')slot.innerHTML=`<div id="stock-act-slot"></div>`;
+  else if(t==='mouvements')slot.innerHTML=`<button class="btn btn-p btn-sm" onclick="openModal('mvt')"><i class="ti ti-plus" aria-hidden="true"></i> Mouvement</button>`;
+  if(t==='stock')buildStockAct();
+}
+function buildStockAct(){
+  const el=document.getElementById('stock-act-slot');if(!el)return;
+  const nb=Object.keys(PE).length;
+  if(UI.editMode){
+    el.innerHTML=`<div class="flex"><button class="btn btn-sm" onclick="cancelEdit()"><i class="ti ti-x" aria-hidden="true"></i> Annuler</button>
+    <button class="btn btn-s btn-sm" id="save-btn" onclick="applyEdits()" ${nb===0?'disabled':''}><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer ${nb>0?`(${nb})`:''}</button>
+    <button class="btn btn-p btn-sm" onclick="openModal('addMat')"><i class="ti ti-plus" aria-hidden="true"></i></button></div>`;
+  }else{
+    el.innerHTML=`<div class="flex"><button class="btn btn-sm" onclick="toggleEdit()"><i class="ti ti-pencil" aria-hidden="true"></i> Modifier</button>
+    <button class="btn btn-p btn-sm" onclick="openModal('addMat')"><i class="ti ti-plus" aria-hidden="true"></i> Matériel</button></div>`;
+  }
+}
+function fabAction(){
+  if(UI.tab==='gymnases')openModal('addGym');
+  else if(UI.tab==='stock')openModal('addMat');
+  else openModal('mvt');
+}
+
+// ══════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════
+function render(t){
+  const el=getContent();
+  if(t==='dashboard')el.innerHTML=rDash();
+  else if(t==='gymnases')el.innerHTML=rGyms();
+  else if(t==='stock')el.innerHTML=rStock();
+  else if(t==='mouvements')el.innerHTML=rMvts();
+}
+
+// ── DASHBOARD ──
+function rDash(){
+  const c=cats();
+  const total=DB.materiels.reduce((a,m)=>a+totM(m.id),0);
+  const rupt=DB.materiels.filter(m=>totM(m.id)===0).length;
+  const low=DB.materiels.filter(m=>DB.gymnases.some(g=>{const q=gs(g.id,m.id);return q>0&&q<4;}));
+  const mvts=DB.mouvements.slice(0,8);
+  return `
+  ${low.length>0?`<div class="alert alert-amber"><i class="ti ti-alert-triangle" style="font-size:15px;flex-shrink:0" aria-hidden="true"></i><span>Stock faible : ${low.map(m=>m.nom).join(', ')}</span></div>`:''}
+  <div class="metrics">
+    <div class="metric-card"><div class="metric-label">Total pièces</div><div class="metric-val">${total}</div><div class="metric-sub">en stock</div></div>
+    <div class="metric-card"><div class="metric-label">Catégories</div><div class="metric-val">${Object.keys(c).length}</div><div class="metric-sub">sports</div></div>
+    <div class="metric-card"><div class="metric-label">Gymnases</div><div class="metric-val">${DB.gymnases.length}</div><div class="metric-sub">établissements</div></div>
+    <div class="metric-card"><div class="metric-label">Alertes</div><div class="metric-val" style="color:${rupt>0?'var(--red)':low.length>0?'var(--amber)':'var(--green)'}">${rupt>0?rupt:low.length>0?low.length:'✓'}</div><div class="metric-sub">${rupt>0?'rupture(s)':low.length>0?'faible(s)':'tout OK'}</div></div>
+  </div>
+  <div class="dash-grid">
+    <div>
+      <div class="sec-hdr"><span class="sec-title">Par gymnase</span><button class="btn btn-sm" onclick="showTab('stock')">Voir stock <i class="ti ti-arrow-right" aria-hidden="true"></i></button></div>
+      <div class="card" style="padding:0;overflow:hidden">
+        ${DB.gymnases.map(g=>{
+          const tot=totG(g.id);const pct=Math.min(100,Math.round(tot/(DB.materiels.length*20)*100));
+          const col=pct<30?'#e24b4a':pct<60?'#ef9f27':'#639922';
+          return `<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background .12s" onclick="goGym('${g.id}')" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+            <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.nom}</div><div class="bar-wrap"><div class="bar" style="width:${pct}%;background:${col}"></div></div></div>
+            <span class="badge bb">${tot}</span>
+            <i class="ti ti-chevron-right" style="color:var(--txt3)" aria-hidden="true"></i>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="${isMob()?'mt12':''}">
+      <div class="sec-hdr"><span class="sec-title">Derniers mouvements</span><button class="btn btn-sm" onclick="showTab('mouvements')">Tout voir <i class="ti ti-arrow-right" aria-hidden="true"></i></button></div>
+      <div class="card" style="padding:0;overflow:hidden">
+        ${mvts.length===0?'<p class="txt2" style="text-align:center;padding:20px 0;font-size:13px">Aucun mouvement</p>':logList(mvts)}
+      </div>
+    </div>
+  </div>`;
+}
+function goGym(g){UI.selGym=g;showTab('stock');}
+
+// ── GYMNASES ──
+function rGyms(){
+  const c=cats();
+  if(isMob()){
+    return DB.gymnases.map(g=>`
+    <div class="card" style="margin-bottom:10px">
+      <div class="flex" style="justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:14px;font-weight:500">${g.nom}</span>
+        <div class="flex">
+          <button class="btn btn-ico-sm" onclick="openModal('renGym','${g.id}')"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+          <button class="btn btn-ico-sm" onclick="openModal('editSt','${g.id}')"><i class="ti ti-package" aria-hidden="true"></i></button>
+          <button class="btn btn-ico-sm btn-d" onclick="delGym('${g.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <div class="metrics" style="margin-bottom:10px">
+        <div class="metric-card" style="padding:10px"><div class="metric-label">Pièces</div><div class="metric-val" style="font-size:20px">${totG(g.id)}</div></div>
+        <div class="metric-card" style="padding:10px"><div class="metric-label">Catégories</div><div class="metric-val" style="font-size:20px">${Object.keys(c).length}</div></div>
+      </div>
+      ${Object.entries(c).map(([cat,items])=>{const t=items.reduce((a,m)=>a+gs(g.id,m.id),0);return`<div class="flex" style="justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border)"><div class="flex" style="gap:6px"><span style="width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;${cs(cat)}"><i class="ti ${ci(cat)}" aria-hidden="true"></i></span><span style="font-size:12px">${cat}</span></div><span class="badge ${t===0?'br':t<5?'ba':'bg'}">${t}</span></div>`;}).join('')}
+      <button class="btn btn-full mt8" onclick="openModal('mvt','${g.id}')"><i class="ti ti-arrows-exchange" aria-hidden="true"></i> Signaler un mouvement</button>
+    </div>`).join('');
+  }
+  return `<div class="tbl-wrap"><table>
+    <thead><tr>
+      <th>Gymnase</th>
+      ${Object.keys(c).map(cat=>`<th><span style="display:inline-flex;align-items:center;gap:4px"><span style="width:14px;height:14px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;${cs(cat)}"><i class="ti ${ci(cat)}" aria-hidden="true"></i></span>${cat}</span></th>`).join('')}
+      <th>Total</th><th>Actions</th>
+    </tr></thead>
+    <tbody>${DB.gymnases.map(g=>`<tr>
+      <td><div class="flex"><span style="font-weight:500">${g.nom}</span><button class="btn btn-xs" onclick="openModal('renGym','${g.id}')"><i class="ti ti-pencil" aria-hidden="true"></i></button></div></td>
+      ${Object.entries(c).map(([cat,items])=>{const t=items.reduce((a,m)=>a+gs(g.id,m.id),0);return`<td><span class="badge ${t===0?'br':t<3?'ba':'bg'}">${t}</span></td>`;}).join('')}
+      <td style="font-weight:500">${totG(g.id)}</td>
+      <td><div class="flex">
+        <button class="btn btn-sm" onclick="openModal('mvt','${g.id}')"><i class="ti ti-arrows-exchange" aria-hidden="true"></i> Mvt</button>
+        <button class="btn btn-sm" onclick="openModal('editSt','${g.id}')"><i class="ti ti-package" aria-hidden="true"></i> Stock</button>
+        <button class="btn btn-sm btn-d" onclick="delGym('${g.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+      </div></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+// ── STOCK ──
+function rStock(){
+  const gid=UI.selGym;const c=cats();const ed=UI.editMode;const nb=Object.keys(PE).length;
+  return `
+  <div class="gym-scroll">
+    ${DB.gymnases.map(g=>`<button class="gym-chip ${gid===g.id?'active':''}" onclick="selGym('${g.id}')">${isMob()?g.nom.split(' ').slice(0,2).join(' '):g.nom}</button>`).join('')}
+  </div>
+  ${ed?`<div class="edit-bar"><i class="ti ti-pencil-minus" aria-hidden="true"></i><span>Modifiez noms, catégories et quantités</span><div class="sp"></div>${nb>0?`<span style="font-weight:500">${nb} modif.</span>`:''}</div>`:``}
+  ${isMob()&&ed?`<div class="flex" style="margin-bottom:10px">
+    <button class="btn btn-sm" style="flex:1" onclick="cancelEdit()"><i class="ti ti-x" aria-hidden="true"></i> Annuler</button>
+    <button class="btn btn-s btn-sm" style="flex:2" id="save-btn-m" onclick="applyEdits()" ${nb===0?'disabled':''}><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer ${nb>0?`(${nb})`:''}</button>
+  </div>`:''}
+  ${isMob()&&!ed?`<div class="flex" style="margin-bottom:10px">
+    <button class="btn btn-sm" style="flex:1" onclick="toggleEdit()"><i class="ti ti-pencil" aria-hidden="true"></i> Modifier</button>
+    <button class="btn btn-p btn-sm" style="flex:1" onclick="openModal('addMat')"><i class="ti ti-plus" aria-hidden="true"></i> Matériel</button>
+  </div>`:''}
+  ${Object.entries(c).map(([cat,items])=>rCatSection(cat,items,gid,ed)).join('')}`;
+}
+
+function rCatSection(cat,items,gid,ed){
+  const isOpen=UI.openCats[cat]!==false;
+  const tot=items.reduce((a,m)=>a+gs(gid,m.id),0);
+  const rupt=items.some(m=>gs(gid,m.id)===0);
+  const slow=items.some(m=>{const q=gs(gid,m.id);return q>0&&q<4;});
+  const key=cat.replace(/\s/g,'_');
+  const allCats=[...new Set(DB.materiels.map(m=>m.categorie))];
+  return `<div class="cat-section">
+    <div class="cat-hdr" onclick="togCat('${cat}')">
+      <span class="cat-icon" style="${cs(cat)}"><i class="ti ${ci(cat)}" aria-hidden="true"></i></span>
+      ${ed?`<input class="ie" value="${cat}" id="ce-${key}" onclick="event.stopPropagation()" onblur="renCat('${cat}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" list="cdl-${key}" style="flex:1;max-width:170px" aria-label="Catégorie">
+        <datalist id="cdl-${key}">${allCats.map(c=>`<option value="${c}">`).join('')}</datalist>`
+      :`<span class="cat-title">${cat}</span>`}
+      ${rupt?'<span class="badge br">Rupture</span>':slow?'<span class="badge ba">Faible</span>':''}
+      <span class="badge bb">${tot}</span>
+      <i class="ti ti-chevron-down cat-chev ${isOpen?'open':''}" id="chev-${key}" aria-hidden="true"></i>
+    </div>
+    <div class="cat-body ${isOpen?'':'hidden'}" id="cb-${key}">
+      ${items.map(m=>{
+        const q=gs(gid,m.id);const pk=`${gid}_${m.id}`;
+        const pend=PE[pk];const disp=pend!==undefined?pend:q;
+        const chg=pend!==undefined&&pend!==q;
+        const col=disp===0?'var(--red)':disp<3?'var(--amber)':'var(--txt)';
+        if(ed){
+          return `<div class="stock-row" style="flex-wrap:wrap;gap:7px">
+            <input class="ie" value="${m.nom}" id="mn-${m.id}" onblur="renMat('${m.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="flex:1;min-width:110px" aria-label="Nom">
+            <div class="flex">
+              <div class="stepper">
+                <button class="sb" onclick="stepQty('${pk}','${gid}','${m.id}',-1)">−</button>
+                <input class="si ${chg?'chg':''}" type="number" min="0" value="${disp}" id="qi-${pk}" inputmode="numeric" oninput="onQI('${pk}','${gid}','${m.id}',this.value)" aria-label="${m.nom}">
+                <button class="sb" onclick="stepQty('${pk}','${gid}','${m.id}',1)">+</button>
+              </div>
+              ${chg?`<span style="font-size:11px;color:var(--amber-txt)">était ${q}</span>`:''}
+            </div>
+          </div>`;
+        }
+        return `<div class="stock-row">
+          <span class="stock-name" style="font-weight:500">${m.nom}</span>
+          <span class="stock-qty" style="color:${col}">${q}</span>
+          <div class="flex">
+            <button class="btn btn-xs btn-ok" onclick="qMove('${gid}','${m.id}','retour')">+1</button>
+            <button class="btn btn-xs btn-d" onclick="qMove('${gid}','${m.id}','prise')">−1</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function selGym(g){UI.selGym=g;PE={};render('stock');buildStockAct();}
+function togCat(cat){
+  const key=cat.replace(/\s/g,'_');
+  const b=document.getElementById(`cb-${key}`);const c=document.getElementById(`chev-${key}`);if(!b)return;
+  const open=!b.classList.contains('hidden');
+  b.classList.toggle('hidden',open);c.classList.toggle('open',!open);UI.openCats[cat]=!open;
+}
+function toggleEdit(){UI.editMode=true;PE={};render('stock');buildStockAct();}
+function cancelEdit(){UI.editMode=false;PE={};render('stock');buildStockAct();}
+
+async function renMat(id,val){
+  const v=val.trim();if(!v)return;
+  const m=DB.materiels.find(x=>x.id===id);if(!m||m.nom===v)return;
+  const old=m.nom;m.nom=v;
+  try{
+    await sbPatch('materiels',{nom:v},`id=eq.${id}`);
+    // update log names
+    DB.mouvements.forEach(x=>{if(x.matId===id)x.matNom=v;});
+    setSyncStatus('ok');
+  }catch(e){m.nom=old;toast('Erreur réseau');setSyncStatus('error');}
+}
+async function renCat(old,nw){
+  const v=nw.trim();if(!v||v===old)return;
+  const affected=DB.materiels.filter(m=>m.categorie===old);
+  affected.forEach(m=>m.categorie=v);
+  if(UI.openCats[old]!==undefined){UI.openCats[v]=UI.openCats[old];delete UI.openCats[old];}
+  try{
+    await Promise.all(affected.map(m=>sbPatch('materiels',{categorie:v},`id=eq.${m.id}`)));
+    setSyncStatus('ok');
+  }catch(e){affected.forEach(m=>m.categorie=old);toast('Erreur réseau');setSyncStatus('error');}
+  render('stock');
+}
+
+function onQI(pk,gid,mid,val){
+  const n=parseInt(val);const orig=gs(gid,mid);
+  if(!isNaN(n)&&n>=0)PE[pk]=n;else delete PE[pk];
+  const inp=document.getElementById(`qi-${pk}`);
+  if(inp)inp.classList.toggle('chg',PE[pk]!==undefined&&PE[pk]!==orig);
+  const nb=Object.keys(PE).length;
+  ['save-btn','save-btn-m'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=nb===0;b.innerHTML=`<i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer ${nb>0?`(${nb})`:''}`;}});
+}
+function stepQty(pk,gid,mid,d){
+  const orig=gs(gid,mid);const cur=PE[pk]!==undefined?PE[pk]:orig;
+  const next=Math.max(0,cur+d);PE[pk]=next;
+  const inp=document.getElementById(`qi-${pk}`);
+  if(inp){inp.value=next;inp.classList.toggle('chg',next!==orig);}
+  onQI(pk,gid,mid,String(next));
+}
+async function applyEdits(){
+  if(!Object.keys(PE).length)return;
+  setSyncStatus('syncing');
+  const gym=DB.gymnases.find(g=>g.id===UI.selGym);let cnt=0;
+  try{
+    const promises=[];
+    Object.entries(PE).forEach(([pk,nq])=>{
+      const[gi,mi]=pk.split('_');const oq=gs(gi,mi);if(nq===oq)return;
+      const mat=DB.materiels.find(m=>m.id===mi);
+      DB.stocks[pk]=nq;cnt++;
+      const mvt={id:uid(),type:'correction',gym_id:gi,mat_id:mi,gym_nom:gym.nom,mat_nom:mat.nom,qte:Math.abs(nq-oq),personne:'Saisie manuelle',note:`${oq}→${nq}`,date_str:nowStr(),old_qty:oq,new_qty:nq};
+      promises.push(sbUpsert('stocks',{gym_id:gi,mat_id:mi,qte:nq}));
+      promises.push(sbPost('mouvements',mvt));
+      DB.mouvements.unshift({id:mvt.id,type:'correction',gymId:gi,matId:mi,gymNom:gym.nom,matNom:mat.nom,qte:mvt.qte,personne:'Saisie manuelle',note:mvt.note,date:mvt.date_str,oldQty:oq,newQty:nq});
+    });
+    await Promise.all(promises);
+    setSyncStatus('ok');PE={};UI.editMode=false;
+    if(cnt>0)toast(`✓ ${cnt} quantité${cnt>1?'s':''} enregistrée${cnt>1?'s':''}`);
+    render('stock');buildStockAct();
+  }catch(e){setSyncStatus('error');toast('Erreur réseau — modifications non sauvegardées');}
+}
+async function qMove(gid,mid,type){
+  const mat=DB.materiels.find(m=>m.id===mid);const gym=DB.gymnases.find(g=>g.id===gid);
+  const q=gs(gid,mid);if(type==='prise'&&q===0){toast('Stock épuisé !');return;}
+  const nq=type==='prise'?q-1:q+1;
+  DB.stocks[`${gid}_${mid}`]=nq;
+  render('stock');
+  setSyncStatus('syncing');
+  try{
+    const mvt={id:uid(),type,gym_id:gid,mat_id:mid,gym_nom:gym.nom,mat_nom:mat.nom,qte:1,personne:'Accès rapide',note:'',date_str:nowStr()};
+    await Promise.all([sbUpsert('stocks',{gym_id:gid,mat_id:mid,qte:nq}),sbPost('mouvements',mvt)]);
+    DB.mouvements.unshift({id:mvt.id,type,gymId:gid,matId:mid,gymNom:gym.nom,matNom:mat.nom,qte:1,personne:'Accès rapide',note:'',date:mvt.date_str});
+    setSyncStatus('ok');
+  }catch(e){DB.stocks[`${gid}_${mid}`]=q;render('stock');setSyncStatus('error');toast('Erreur réseau');}
+}
+
+// ── MOUVEMENTS ──
+function rMvts(){
+  const all=DB.mouvements;
+  const bc={};all.forEach(mv=>{const mat=DB.materiels.find(m=>m.id===mv.matId);const cat=mat?mat.categorie:'Autre';(bc[cat]||(bc[cat]=[])).push(mv);});
+  return `<div class="sec-hdr"><span class="sec-title">Historique (${all.length})</span></div>
+  ${all.length===0?`<div class="card"><p class="txt2" style="text-align:center;padding:20px 0;font-size:13px">Aucun mouvement.</p></div>`
+  :Object.entries(bc).map(([cat,items])=>`<div class="cat-section" style="margin-bottom:10px">
+    <div class="cat-hdr" onclick="togMvt('${cat}')">
+      <span class="cat-icon" style="${cs(cat)}"><i class="ti ${ci(cat)}" aria-hidden="true"></i></span>
+      <span class="cat-title">${cat}</span>
+      <span class="badge bb">${items.length}</span>
+      <i class="ti ti-chevron-down cat-chev open" id="cm-${cat.replace(/\s/g,'_')}" aria-hidden="true"></i>
+    </div>
+    <div class="cat-body" id="cbm-${cat.replace(/\s/g,'_')}">${logList(items)}</div>
+  </div>`).join('')}`;
+}
+function togMvt(cat){
+  const k=cat.replace(/\s/g,'_');
+  const b=document.getElementById(`cbm-${k}`);const c=document.getElementById(`cm-${k}`);
+  const o=!b.classList.contains('hidden');b.classList.toggle('hidden',o);c.classList.toggle('open',!o);
+}
+function logList(items){
+  const{m:rm,u:ru}=retourMap();let h='';
+  items.forEach(mv=>{
+    if(mv.type==='retour'&&ru.has(mv.id))return;
+    const cor=mv.type==='correction';
+    const cls=cor?'log-edit':mv.type==='prise'?'log-take':'log-return';
+    const ico=cor?'ti-pencil':mv.type==='prise'?'ti-arrow-up-right':'ti-arrow-down-left';
+    const lbl=cor?'Correction':mv.type==='prise'?'Prise':'Retour';
+    h+=`<div class="log-item" style="${mv.type==='prise'?'border-bottom:none;':''}">
+      <div class="log-dot ${cls}"><i class="ti ${ico}" aria-hidden="true"></i></div>
+      <div class="log-body">
+        <div class="log-title">${lbl} — ${mv.matNom}${cor?` (${mv.oldQty}→${mv.newQty})`:` ×${mv.qte}`}</div>
+        <div class="log-meta">${mv.gymNom} · <strong style="color:var(--txt2)">${mv.personne}</strong> · ${mv.date}</div>
+        ${mv.note&&!cor?`<div class="log-meta" style="font-style:italic">"${mv.note}"</div>`:''}
+      </div>
+    </div>`;
+    if(mv.type==='prise'){
+      const r=rm[mv.id];
+      if(r)h+=`<div class="log-rd"><div class="rdot"><i class="ti ti-arrow-down-left" aria-hidden="true"></i></div><span style="font-size:12px;font-weight:500;color:var(--green-txt)">Retourné</span><span style="font-size:11px;color:var(--txt3)"> · ×${r.qte} · ${r.date}</span></div>`;
+      else h+=`<div class="log-rp"><button class="btn-ri" onclick="openModalRetour('${mv.id}')"><i class="ti ti-arrow-down-left" aria-hidden="true"></i> Signaler le retour</button></div>`;
+    }
+  });
+  return h||`<div style="padding:12px 14px"><p class="txt2" style="font-size:13px">Aucun mouvement.</p></div>`;
+}
+
+// ── MODAL RETOUR ──
+function openModalRetour(pid){
+  const p=DB.mouvements.find(m=>m.id===pid);if(!p)return;
+  document.getElementById('modal-root').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head"><h3>Signaler le retour</h3><button class="btn btn-ico" onclick="closeModal()"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+    <div class="modal-body">
+      <div class="recap"><div class="recap-title"><i class="ti ti-arrow-up-right" aria-hidden="true"></i> Prise d'origine</div>
+        <div class="recap-row"><span>${p.matNom}</span><span>×${p.qte}</span></div>
+        <div class="recap-row"><span>${p.gymNom}</span><span>${p.personne}</span></div>
+        <div class="recap-row"><span style="opacity:.7">${p.date}</span></div>
+      </div>
+      <div class="fg"><label class="fl">Quantité retournée</label>
+        <div class="stepper"><button class="sb" style="width:36px;height:36px;font-size:18px" onclick="rs(-1)">−</button>
+          <input class="si" type="number" min="1" value="${p.qte}" id="rq" style="width:72px;height:36px;font-size:15px" inputmode="numeric">
+        <button class="sb" style="width:36px;height:36px;font-size:18px" onclick="rs(1)">+</button></div>
+      </div>
+      <div class="fg"><label class="fl">Note (optionnel)</label><input type="text" id="rn" class="fi" placeholder="Ex: matériel en bon état"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">Annuler</button><button class="btn btn-s" onclick="saveRetour('${pid}')"><i class="ti ti-check" aria-hidden="true"></i> Confirmer</button></div>
+  </div></div>`;
+}
+function rs(d){const i=document.getElementById('rq');if(i)i.value=Math.max(1,(parseInt(i.value)||1)+d);}
+async function saveRetour(pid){
+  const p=DB.mouvements.find(m=>m.id===pid);if(!p)return;
+  const qte=Math.max(1,parseInt(document.getElementById('rq').value)||p.qte);
+  const note=document.getElementById('rn').value;
+  const oq=gs(p.gymId,p.matId);const nq=oq+qte;
+  DB.stocks[`${p.gymId}_${p.matId}`]=nq;
+  const mvt={id:uid(),type:'retour',gym_id:p.gymId,mat_id:p.matId,gym_nom:p.gymNom,mat_nom:p.matNom,qte,personne:p.personne,note,date_str:nowStr()};
+  closeModal();setSyncStatus('syncing');
+  try{
+    await Promise.all([sbUpsert('stocks',{gym_id:p.gymId,mat_id:p.matId,qte:nq}),sbPost('mouvements',mvt)]);
+    DB.mouvements.unshift({id:mvt.id,type:'retour',gymId:p.gymId,matId:p.matId,gymNom:p.gymNom,matNom:p.matNom,qte,personne:p.personne,note,date:mvt.date_str});
+    setSyncStatus('ok');toast(`Retour enregistré`);render(UI.tab);
+  }catch(e){DB.stocks[`${p.gymId}_${p.matId}`]=oq;setSyncStatus('error');toast('Erreur réseau');}
+}
+
+// ── MODALS ──
+function openModal(type,id){
+  const root=document.getElementById('modal-root');
+  if(type==='mvt')root.innerHTML=mMvt(id);
+  else if(type==='addGym')root.innerHTML=mAddGym();
+  else if(type==='renGym')root.innerHTML=mRenGym(id);
+  else if(type==='addMat')root.innerHTML=mAddMat();
+  else if(type==='editSt')root.innerHTML=mEditSt(id);
+  setTimeout(()=>{if(type==='mvt')fillMats();},0);
+}
+function closeModal(){document.getElementById('modal-root').innerHTML='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+function mMvt(pre){
+  return `<div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head"><h3>Signaler un mouvement</h3><button class="btn btn-ico" onclick="closeModal()"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg"><label class="fl">Type</label><select id="mv-t" class="fi"><option value="prise">📤 Prise</option><option value="retour">📥 Retour</option></select></div>
+        <div class="fg"><label class="fl">Gymnase</label><select id="mv-g" class="fi">${DB.gymnases.map(g=>`<option value="${g.id}" ${g.id===pre?'selected':''}>${g.nom}</option>`).join('')}</select></div>
+        <div class="fg"><label class="fl">Catégorie</label><select id="mv-c" class="fi" onchange="fillMats()">${[...new Set(DB.materiels.map(m=>m.categorie))].map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div class="fg"><label class="fl">Matériel</label><select id="mv-m" class="fi"></select></div>
+        <div class="fg"><label class="fl">Quantité</label><input type="number" id="mv-q" class="fi" min="1" value="1" inputmode="numeric"></div>
+        <div class="fg"><label class="fl">Personne</label><input type="text" id="mv-p" class="fi" placeholder="Ex: Marie Dupont" autocomplete="name"></div>
+      </div>
+      <div class="fg"><label class="fl">Note (optionnel)</label><input type="text" id="mv-n" class="fi" placeholder="Ex: Cours du lundi"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">Annuler</button><button class="btn btn-p" onclick="saveMvt()"><i class="ti ti-check" aria-hidden="true"></i> Enregistrer</button></div>
+  </div></div>`;
+}
+function fillMats(){
+  const cat=document.getElementById('mv-c')?.value;
+  const sel=document.getElementById('mv-m');if(!sel)return;
+  sel.innerHTML=DB.materiels.filter(m=>m.categorie===cat).map(m=>`<option value="${m.id}">${m.nom}</option>`).join('');
+}
+async function saveMvt(){
+  const type=document.getElementById('mv-t').value;
+  const gymId=document.getElementById('mv-g').value;
+  const matId=document.getElementById('mv-m').value;
+  const qte=parseInt(document.getElementById('mv-q').value)||1;
+  const pers=document.getElementById('mv-p').value||'Inconnu';
+  const note=document.getElementById('mv-n').value;
+  const gym=DB.gymnases.find(g=>g.id===gymId);const mat=DB.materiels.find(m=>m.id===matId);
+  if(!mat){toast('Sélectionnez un matériel');return;}
+  const cur=gs(gymId,matId);
+  if(type==='prise'&&qte>cur){toast(`Stock insuffisant (${cur} dispo)`);return;}
+  const nq=type==='prise'?cur-qte:cur+qte;
+  DB.stocks[`${gymId}_${matId}`]=nq;
+  const mvt={id:uid(),type,gym_id:gymId,mat_id:matId,gym_nom:gym.nom,mat_nom:mat.nom,qte,personne:pers,note,date_str:nowStr()};
+  closeModal();setSyncStatus('syncing');
+  try{
+    await Promise.all([sbUpsert('stocks',{gym_id:gymId,mat_id:matId,qte:nq}),sbPost('mouvements',mvt)]);
+    DB.mouvements.unshift({id:mvt.id,type,gymId,matId,gymNom:gym.nom,matNom:mat.nom,qte,personne:pers,note,date:mvt.date_str});
+    setSyncStatus('ok');toast('Mouvement enregistré');render(UI.tab);
+  }catch(e){DB.stocks[`${gymId}_${matId}`]=cur;setSyncStatus('error');toast('Erreur réseau');}
+}
+
+function mAddGym(){
+  return `<div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head"><h3>Nouveau gymnase</h3><button class="btn btn-ico" onclick="closeModal()"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+    <div class="modal-body"><div class="fg"><label class="fl">Nom</label><input type="text" id="gn" class="fi" placeholder="Ex: Gymnase Jean Jaurès" autocomplete="off"></div></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">Annuler</button><button class="btn btn-p" onclick="saveGym()"><i class="ti ti-check" aria-hidden="true"></i> Ajouter</button></div>
+  </div></div>`;
+}
+async function saveGym(){
+  const nom=document.getElementById('gn').value.trim();if(!nom){toast('Entrez un nom');return;}
+  const id='g'+uid();
+  DB.gymnases.push({id,nom});
+  DB.materiels.forEach(m=>{DB.stocks[`${id}_${m.id}`]=0;});
+  closeModal();setSyncStatus('syncing');
+  try{
+    await sbUpsert('gymnases',{id,nom});
+    await Promise.all(DB.materiels.map(m=>sbUpsert('stocks',{gym_id:id,mat_id:m.id,qte:0})));
+    setSyncStatus('ok');toast(`${nom} ajouté`);render('gymnases');
+  }catch(e){DB.gymnases=DB.gymnases.filter(g=>g.id!==id);setSyncStatus('error');toast('Erreur réseau');}
+}
+async function delGym(gid){
+  const g=DB.gymnases.find(x=>x.id===gid);if(!confirm(`Supprimer ${g.nom} ?`))return;
+  DB.gymnases=DB.gymnases.filter(x=>x.id!==gid);
+  DB.materiels.forEach(m=>delete DB.stocks[`${gid}_${m.id}`]);
+  if(UI.selGym===gid)UI.selGym=DB.gymnases[0]?.id;
+  setSyncStatus('syncing');
+  try{
+    await sbDelete('gymnases',`id=eq.${gid}`);
+    await sbDelete('stocks',`gym_id=eq.${gid}`);
+    setSyncStatus('ok');render('gymnases');
+  }catch(e){setSyncStatus('error');toast('Erreur réseau');loadAll();}
+}
+
+function mRenGym(gid){
+  const g=DB.gymnases.find(x=>x.id===gid);
+  return `<div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head"><h3>Renommer le gymnase</h3><button class="btn btn-ico" onclick="closeModal()"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+    <div class="modal-body"><div class="fg"><label class="fl">Nom</label><input type="text" id="rgn" class="fi" value="${g.nom}" autocomplete="off"></div></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">Annuler</button><button class="btn btn-s" onclick="saveRenGym('${gid}')"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button></div>
+  </div></div>`;
+}
+async function saveRenGym(gid){
+  const nom=document.getElementById('rgn').value.trim();if(!nom){toast('Entrez un nom');return;}
+  const g=DB.gymnases.find(x=>x.id===gid);const old=g.nom;g.nom=nom;
+  DB.mouvements.forEach(m=>{if(m.gymId===gid)m.gymNom=nom;});
+  closeModal();setSyncStatus('syncing');
+  try{
+    await sbPatch('gymnases',{nom},`id=eq.${gid}`);
+    setSyncStatus('ok');toast('Renommé');render(UI.tab);
+  }catch(e){g.nom=old;setSyncStatus('error');toast('Erreur réseau');}
+}
+
+function mAddMat(){
+  const ec=[...new Set(DB.materiels.map(m=>m.categorie))];
+  return `<div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head"><h3>Nouveau matériel</h3><button class="btn btn-ico" onclick="closeModal()"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg"><label class="fl">Nom</label><input type="text" id="mn" class="fi" placeholder="Ex: Raquette de badminton" autocomplete="off"></div>
+        <div class="fg"><label class="fl">Catégorie</label><input type="text" id="mc" class="fi" placeholder="Ex: Badminton" list="cdl" autocomplete="off"><datalist id="cdl">${ec.map(c=>`<option value="${c}">`).join('')}</datalist></div>
+      </div>
+      <div class="fg"><label class="fl" style="margin-bottom:7px">Stock initial par gymnase</label>
+        <div class="mat-grid">${DB.gymnases.map(g=>`<div class="flex" style="justify-content:space-between;padding:8px 10px;background:var(--bg3);border-radius:var(--r)"><span style="font-size:13px">${g.nom}</span><input type="number" id="mq-${g.id}" class="fi" min="0" value="0" inputmode="numeric" style="width:65px;text-align:center"></div>`).join('')}</div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">Annuler</button><button class="btn btn-p" onclick="saveMat()"><i class="ti ti-check" aria-hidden="true"></i> Ajouter</button></div>
+  </div></div>`;
+}
+async function saveMat(){
+  const nom=document.getElementById('mn').value.trim();const cat=document.getElementById('mc').value.trim();
+  if(!nom){toast('Entrez un nom');return;}
+  const id='m'+uid();
+  DB.materiels.push({id,nom,categorie:cat||'Autre'});
+  const stks=DB.gymnases.map(g=>{const q=parseInt(document.getElementById(`mq-${g.id}`)?.value)||0;DB.stocks[`${g.id}_${id}`]=q;return{gym_id:g.id,mat_id:id,qte:q};});
+  closeModal();setSyncStatus('syncing');
+  try{
+    await sbUpsert('materiels',{id,nom,categorie:cat||'Autre'});
+    await Promise.all(stks.map(s=>sbUpsert('stocks',s)));
+    setSyncStatus('ok');toast(`${nom} ajouté`);render('stock');
+  }catch(e){DB.materiels=DB.materiels.filter(m=>m.id!==id);setSyncStatus('error');toast('Erreur réseau');}
+}
+
+function mEditSt(gid){
+  const g=DB.gymnases.find(x=>x.id===gid);const c=cats();
+  return `<div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-head"><h3>Stock — ${g.nom}</h3><button class="btn btn-ico" onclick="closeModal()"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--txt2);margin-bottom:14px">Modifiez les quantités.</p>
+      ${Object.entries(c).map(([cat,items])=>`<div style="margin-bottom:14px">
+        <div class="flex" style="gap:7px;margin-bottom:8px">
+          <span style="width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;${cs(cat)}"><i class="ti ${ci(cat)}" aria-hidden="true"></i></span>
+          <span style="font-size:13px;font-weight:500">${cat}</span>
+        </div>
+        <div class="mat-grid">${items.map(m=>{const q=gs(gid,m.id);return`<div class="flex" style="justify-content:space-between;padding:8px 10px;background:var(--bg3);border-radius:var(--r)">
+          <label style="font-size:13px;flex:1">${m.nom} <span class="txt3">(${q})</span></label>
+          <div class="stepper"><button class="sb" onclick="ms('${gid}','${m.id}',-1)">−</button><input class="si" type="number" min="0" value="${q}" id="es-${gid}-${m.id}" inputmode="numeric" oninput="this.classList.toggle('chg',parseInt(this.value)!==${q})"><button class="sb" onclick="ms('${gid}','${m.id}',1)">+</button></div>
+        </div>`;}).join('')}</div>
+      </div>`).join('')}
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">Annuler</button><button class="btn btn-s" onclick="saveEditSt('${gid}')"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button></div>
+  </div></div>`;
+}
+function ms(gid,mid,d){
+  const i=document.getElementById(`es-${gid}-${mid}`);if(!i)return;
+  const orig=gs(gid,mid);const next=Math.max(0,(parseInt(i.value)||0)+d);
+  i.value=next;i.classList.toggle('chg',next!==orig);
+}
+async function saveEditSt(gid){
+  const gym=DB.gymnases.find(g=>g.id===gid);let cnt=0;
+  const changes=[];
+  DB.materiels.forEach(m=>{
+    const i=document.getElementById(`es-${gid}-${m.id}`);if(!i)return;
+    const nq=parseInt(i.value);const oq=gs(gid,m.id);
+    if(!isNaN(nq)&&nq>=0&&nq!==oq){
+      DB.stocks[`${gid}_${m.id}`]=nq;cnt++;
+      const mvt={id:uid(),type:'correction',gym_id:gid,mat_id:m.id,gym_nom:gym.nom,mat_nom:m.nom,qte:Math.abs(nq-oq),personne:'Saisie manuelle',note:`${oq}→${nq}`,date_str:nowStr(),old_qty:oq,new_qty:nq};
+      changes.push({gid,mid:m.id,nq,oq,mvt,matNom:m.nom});
+    }
+  });
+  closeModal();if(!cnt)return;
+  setSyncStatus('syncing');
+  try{
+    await Promise.all(changes.flatMap(c=>[sbUpsert('stocks',{gym_id:c.gid,mat_id:c.mid,qte:c.nq}),sbPost('mouvements',c.mvt)]));
+    changes.forEach(c=>DB.mouvements.unshift({id:c.mvt.id,type:'correction',gymId:gid,matId:c.mid,gymNom:gym.nom,matNom:c.matNom,qte:c.mvt.qte,personne:'Saisie manuelle',note:c.mvt.note,date:c.mvt.date_str,oldQty:c.oq,newQty:c.nq}));
+    setSyncStatus('ok');toast(`✓ ${cnt} quantité${cnt>1?'s':''} enregistrée${cnt>1?'s':''}`);render(UI.tab);
+  }catch(e){changes.forEach(c=>DB.stocks[`${gid}_${c.mid}`]=c.oq);setSyncStatus('error');toast('Erreur réseau');}
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+// Force save / reload from DB
+async function forceSave(){
+  setSyncStatus('syncing');
+  try{
+    // Re-sync all stocks to DB
+    const promises=[];
+    Object.entries(DB.stocks).forEach(([key,qte])=>{
+      const [gym_id,mat_id]=key.split('_');
+      promises.push(sbUpsert('stocks',{gym_id,mat_id,qte}));
+    });
+    await Promise.all(promises);
+    setSyncStatus('ok');
+    toast('✓ Toutes les données enregistrées');
+  }catch(e){
+    setSyncStatus('error');
+    toast('Erreur — vérifiez votre connexion');
+  }
+}
+
+let rzT;
+window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{render(UI.tab);buildTopbarActions(UI.tab);},120);});
+loadAll();
+</script>
+</body>
+</html>

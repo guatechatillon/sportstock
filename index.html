@@ -847,7 +847,7 @@ function openM(type,id){
   else if(type==='renGym')root.innerHTML=mRenGym(id);
   else if(type==='addMat')root.innerHTML=mAddMat();
   else if(type==='editSt')root.innerHTML=mEditSt(id);
-  setTimeout(()=>{if(type==='mvt')fillMats();},0);
+  setTimeout(()=>{if(type==='mvt'){fillMats();toggleDest('prise');}},0);
 }
 function closeM(){document.getElementById('mr').innerHTML='';}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM();});

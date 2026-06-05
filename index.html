@@ -3,8 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SportStock</title>
+<title>Gestion Matériel</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gestion Matériel">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a6fc4">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -213,9 +221,14 @@ select.fi{cursor:pointer}
       <button class="nav-item" onclick="showTab('stock')" id="nav-stock"><i class="ti ti-package" aria-hidden="true"></i>Stock</button>
       <button class="nav-item" onclick="showTab('mvts')" id="nav-mvts"><i class="ti ti-arrows-exchange" aria-hidden="true"></i>Mouvements</button>
     </nav>
-    <div class="sb-footer">
-      <span class="sdot" id="d-dot"></span>
-      <span id="d-sync-txt">Synchronisé</span>
+    <div class="sb-footer" style="flex-direction:column;gap:8px;align-items:flex-start">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="sdot" id="d-dot"></span>
+        <span id="d-sync-txt">Synchronisé</span>
+      </div>
+      <button id="install-btn" onclick="installApp()" style="display:none;width:100%;height:32px;padding:0 10px;border:0.5px solid var(--blue);border-radius:var(--r);background:var(--blue-bg);color:var(--blue-txt);font-size:12px;font-family:inherit;cursor:pointer;align-items:center;justify-content:center;gap:6px;font-weight:500">
+        <i class="ti ti-download" aria-hidden="true"></i> Installer l'application
+      </button>
     </div>
   </aside>
   <div id="main">
@@ -223,6 +236,7 @@ select.fi{cursor:pointer}
       <span id="page-title">Tableau de bord</span>
       <div id="topbar-actions"></div>
       <button class="btn btn-s" id="save-btn-d" onclick="forceSave()" style="gap:5px"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button>
+      <button class="btn" onclick="exportExcel()" style="gap:5px;border-color:#1d6f42;color:#1d6f42;background:#e8f5e9"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Export Excel</button>
     </div>
     <div id="content"></div>
   </div>
@@ -234,7 +248,11 @@ select.fi{cursor:pointer}
     <i class="ti ti-ball-football" style="font-size:20px;color:var(--blue)" aria-hidden="true"></i>
     <h1>SportStock</h1>
     <button class="btn btn-s" onclick="forceSave()" style="height:30px;padding:0 10px;font-size:12px" id="save-btn-m"><i class="ti ti-device-floppy" aria-hidden="true"></i></button>
+    <button class="btn" onclick="exportExcel()" style="height:30px;padding:0 10px;font-size:12px;border-color:#1d6f42;color:#1d6f42;background:#e8f5e9"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i></button>
     <span class="sdot" id="m-dot"></span>
+    <button id="install-btn-m" onclick="installApp()" style="display:none;height:30px;padding:0 8px;border:0.5px solid var(--blue);border-radius:var(--r);background:var(--blue-bg);color:var(--blue-txt);font-size:11px;font-family:inherit;cursor:pointer;align-items:center;gap:4px">
+      <i class="ti ti-download" aria-hidden="true"></i>
+    </button>
   </div>
   <div id="content-mob"></div>
   <nav id="botnav">
@@ -944,6 +962,95 @@ function saveEditSt(gid){
 }
 
 // ══════════════════════════════
+// EXPORT EXCEL
+// ══════════════════════════════
+function exportExcel(){
+  const wb = XLSX.utils.book_new();
+  const c = cats();
+  const dateStr = new Date().toLocaleDateString('fr-FR').replace(/\//g,'-');
+
+  // ── Feuille 1 : Stock global (tous les gymnases) ──
+  const globalRows = [];
+  // En-tête
+  globalRows.push(['Catégorie','Matériel',...DB.gymnases.map(g=>g.nom),'TOTAL']);
+  Object.entries(c).forEach(([cat,items])=>{
+    items.forEach(m=>{
+      const row=[cat, m.nom];
+      let total=0;
+      DB.gymnases.forEach(g=>{
+        const q=gs(g.id,m.id);
+        row.push(q);
+        total+=q;
+      });
+      row.push(total);
+      globalRows.push(row);
+    });
+    // Ligne sous-total par catégorie
+    const subRow=['','Sous-total '+cat];
+    let catTotal=0;
+    DB.gymnases.forEach(g=>{
+      const t=items.reduce((a,m2)=>a+gs(g.id,m2.id),0);
+      subRow.push(t);catTotal+=t;
+    });
+    subRow.push(catTotal);
+    globalRows.push(subRow);
+    globalRows.push([]); // ligne vide entre catégories
+  });
+  // Total général
+  const totalRow=['','TOTAL GÉNÉRAL'];
+  let grandTotal=0;
+  DB.gymnases.forEach(g=>{
+    const t=totG(g.id);totalRow.push(t);grandTotal+=t;
+  });
+  totalRow.push(grandTotal);
+  globalRows.push(totalRow);
+
+  const ws1 = XLSX.utils.aoa_to_sheet(globalRows);
+
+  // Style largeurs colonnes
+  ws1['!cols'] = [{wch:18},{wch:24},...DB.gymnases.map(()=>({wch:16})),{wch:10}];
+
+  XLSX.utils.book_append_sheet(wb, ws1, 'Stock Global');
+
+  // ── Feuille 2 : Une feuille par gymnase ──
+  DB.gymnases.forEach(g=>{
+    const rows=[];
+    rows.push([g.nom]);
+    rows.push(['Date export:', new Date().toLocaleDateString('fr-FR')]);
+    rows.push([]);
+    rows.push(['Catégorie','Matériel','Quantité','Statut']);
+    Object.entries(c).forEach(([cat,items])=>{
+      items.forEach(m=>{
+        const q=gs(g.id,m.id);
+        const statut=q===0?'Rupture':q<3?'Stock faible':'OK';
+        rows.push([cat,m.nom,q,statut]);
+      });
+    });
+    rows.push([]);
+    rows.push(['','TOTAL',totG(g.id),'']);
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:18},{wch:24},{wch:12},{wch:14}];
+    // Nom de feuille max 31 chars
+    const sheetName=g.nom.substring(0,31);
+    XLSX.utils.book_append_sheet(wb,ws,sheetName);
+  });
+
+  // ── Feuille 3 : Historique des mouvements ──
+  const mvtRows=[['Date','Type','Gymnase','Matériel','Quantité','Personne','Note']];
+  DB.mouvements.forEach(mv=>{
+    const type=mv.type==='prise'?'Prise':mv.type==='retour'?'Retour':'Correction';
+    mvtRows.push([mv.date,type,mv.gymNom,mv.matNom,mv.qte,mv.personne,mv.note||'']);
+  });
+  const ws3=XLSX.utils.aoa_to_sheet(mvtRows);
+  ws3['!cols']=[{wch:14},{wch:12},{wch:22},{wch:22},{wch:10},{wch:18},{wch:24}];
+  XLSX.utils.book_append_sheet(wb,ws3,'Mouvements');
+
+  // Téléchargement
+  XLSX.writeFile(wb, `SportStock_${dateStr}.xlsx`);
+  toast('✓ Export Excel téléchargé');
+}
+
+// ══════════════════════════════
 // INIT
 // ══════════════════════════════
 async function init(){
@@ -975,5 +1082,43 @@ window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{rend
 init();
 </script>
 <div class="toast" id="_t" role="status" aria-live="polite"></div>
+<script>
+// Enregistrement du Service Worker (PWA)
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sportstock/sw.js')
+      .then(r => console.log('SW enregistré'))
+      .catch(e => console.log('SW erreur:', e));
+  });
+}
+
+// Bouton d'installation PWA
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  ['install-btn','install-btn-m'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(btn) btn.style.display = 'flex';
+  });
+});
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('install-btn');
+  if(btn) btn.style.display = 'none';
+  deferredPrompt = null;
+});
+function installApp(){
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(r => {
+    if(r.outcome === 'accepted') toast('✓ Application installée !');
+    deferredPrompt = null;
+    ['install-btn','install-btn-m'].forEach(id=>{
+      const btn = document.getElementById(id);
+      if(btn) btn.style.display = 'none';
+    });
+  });
+}
+</script>
 </body>
 </html>

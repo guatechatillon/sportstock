@@ -866,9 +866,9 @@ function mMvt(pre){
         <div class="fg"><label class="fl">Personne</label><input type="text" id="mv-p" class="fi" placeholder="Ex: Marie Dupont" autocomplete="name"></div>
       </div>
       <div class="fg" id="dest-grp" style="display:none">
-        <label class="fl">Gymnase de destination <span style="color:var(--txt3)">(optionnel)</span></label>
+        <label class="fl">Gymnase de destination <span style="color:var(--red-txt)">*</span></label>
         <select id="mv-dest" class="fi">
-          <option value="">— Aucun / Rangé sur place —</option>
+          <option value="" disabled selected>— Choisissez un gymnase —</option>
           ${DB.gymnases.map(g=>`<option value="${g.id}">${g.nom}</option>`).join('')}
         </select>
       </div>
@@ -894,6 +894,7 @@ function saveMvt(){
   const pers=document.getElementById('mv-p').value||'Inconnu';
   const note=document.getElementById('mv-n').value;
   const destId=type==='prise'?(document.getElementById('mv-dest')?.value||''):'';
+  if(type==='prise'&&!destId){toast('Veuillez choisir un gymnase de destination');return;}
   const gym=DB.gymnases.find(g=>g.id===gymId);
   const mat=DB.materiels.find(m=>m.id===matId);
   const destGym=destId?DB.gymnases.find(g=>g.id===destId):null;

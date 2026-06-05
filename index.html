@@ -779,12 +779,23 @@ function logList(items){
     const cls=cor?'le':mv.type==='prise'?'lt':'lr';
     const ico=cor?'ti-pencil':mv.type==='prise'?'ti-arrow-up-right':'ti-arrow-down-left';
     const lbl=cor?'Correction':mv.type==='prise'?'Prise':'Retour';
+    // Ligne lieu : origine → destination si transfert
+    let lieuHtml='';
+    if(cor){
+      lieuHtml=`<i class="ti ti-building-community" style="font-size:10px" aria-hidden="true"></i> ${mv.gymNom}`;
+    } else if(mv.type==='prise' && mv.destGymNom){
+      lieuHtml=`<i class="ti ti-building-community" style="font-size:10px" aria-hidden="true"></i> <span style="color:var(--amber-txt)">${mv.gymNom}</span> <i class="ti ti-arrow-right" style="font-size:10px" aria-hidden="true"></i> <span style="color:var(--green-txt)">${mv.destGymNom}</span>`;
+    } else if(mv.type==='retour'){
+      lieuHtml=`<i class="ti ti-building-community" style="font-size:10px" aria-hidden="true"></i> Retour à <strong style="color:var(--green-txt)">${mv.gymNom}</strong>`;
+    } else {
+      lieuHtml=`<i class="ti ti-building-community" style="font-size:10px" aria-hidden="true"></i> ${mv.gymNom}`;
+    }
     h+=`<div class="li" style="${mv.type==='prise'?'border-bottom:none;':''}">
       <div class="ld ${cls}"><i class="ti ${ico}" aria-hidden="true"></i></div>
       <div class="lb">
         <div class="ltt">${lbl} — ${mv.matNom}${cor?` (${mv.oldQty}→${mv.newQty})`:` ×${mv.qte}`}</div>
-        <div class="lm">${mv.gymNom} · <strong style="color:var(--txt2)">${mv.personne}</strong> · ${mv.date}</div>
-        ${mv.note&&!cor?`<div class="lm" style="font-style:italic">"${mv.note}"</div>`:''}
+        <div class="lm">${lieuHtml} · <i class="ti ti-user" style="font-size:10px" aria-hidden="true"></i> <strong style="color:var(--txt2)">${mv.personne}</strong> · <i class="ti ti-clock" style="font-size:10px" aria-hidden="true"></i> ${mv.date}</div>
+        ${mv.note&&!cor?`<div class="lm" style="font-style:italic;margin-top:2px"><i class="ti ti-message" style="font-size:10px" aria-hidden="true"></i> "${mv.note}"</div>`:''}
       </div>
     </div>`;
     if(mv.type==='prise'){
@@ -847,12 +858,19 @@ function mMvt(pre){
     <div class="mh"><h3>Signaler un mouvement</h3><button class="btn btn-ico" onclick="closeM()"><i class="ti ti-x" aria-hidden="true"></i></button></div>
     <div class="mb">
       <div class="fg2">
-        <div class="fg"><label class="fl">Type</label><select id="mv-t" class="fi"><option value="prise">📤 Prise</option><option value="retour">📥 Retour</option></select></div>
+        <div class="fg"><label class="fl">Type</label><select id="mv-t" class="fi" onchange="toggleDest(this.value)"><option value="prise">📤 Prise</option><option value="retour">📥 Retour</option></select></div>
         <div class="fg"><label class="fl">Gymnase</label><select id="mv-g" class="fi">${DB.gymnases.map(g=>`<option value="${g.id}" ${g.id===pre?'selected':''}>${g.nom}</option>`).join('')}</select></div>
         <div class="fg"><label class="fl">Catégorie</label><select id="mv-c" class="fi" onchange="fillMats()">${[...new Set(DB.materiels.map(m=>m.categorie))].map(c=>`<option>${c}</option>`).join('')}</select></div>
         <div class="fg"><label class="fl">Matériel</label><select id="mv-m" class="fi"></select></div>
         <div class="fg"><label class="fl">Quantité</label><input type="number" id="mv-q" class="fi" min="1" value="1" inputmode="numeric"></div>
         <div class="fg"><label class="fl">Personne</label><input type="text" id="mv-p" class="fi" placeholder="Ex: Marie Dupont" autocomplete="name"></div>
+      </div>
+      <div class="fg" id="dest-grp" style="display:none">
+        <label class="fl">Gymnase de destination <span style="color:var(--txt3)">(optionnel)</span></label>
+        <select id="mv-dest" class="fi">
+          <option value="">— Aucun / Rangé sur place —</option>
+          ${DB.gymnases.map(g=>`<option value="${g.id}">${g.nom}</option>`).join('')}
+        </select>
       </div>
       <div class="fg"><label class="fl">Note (optionnel)</label><input type="text" id="mv-n" class="fi" placeholder="Ex: Cours du lundi"></div>
     </div>
@@ -864,6 +882,10 @@ function fillMats(){
   const sel=document.getElementById('mv-m');if(!sel)return;
   sel.innerHTML=DB.materiels.filter(m=>m.categorie===cat).map(m=>`<option value="${m.id}">${m.nom}</option>`).join('');
 }
+function toggleDest(type){
+  const grp=document.getElementById('dest-grp');
+  if(grp) grp.style.display=type==='prise'?'block':'none';
+}
 function saveMvt(){
   const type=document.getElementById('mv-t').value;
   const gymId=document.getElementById('mv-g').value;
@@ -871,12 +893,23 @@ function saveMvt(){
   const qte=parseInt(document.getElementById('mv-q').value)||1;
   const pers=document.getElementById('mv-p').value||'Inconnu';
   const note=document.getElementById('mv-n').value;
-  const gym=DB.gymnases.find(g=>g.id===gymId);const mat=DB.materiels.find(m=>m.id===matId);
+  const destId=type==='prise'?(document.getElementById('mv-dest')?.value||''):'';
+  const gym=DB.gymnases.find(g=>g.id===gymId);
+  const mat=DB.materiels.find(m=>m.id===matId);
+  const destGym=destId?DB.gymnases.find(g=>g.id===destId):null;
   if(!mat){toast('Sélectionnez un matériel');return;}
   const cur=gs(gymId,matId);
   if(type==='prise'&&qte>cur){toast(`Stock insuffisant (${cur} dispo)`);return;}
   type==='prise'?ss(gymId,matId,cur-qte):ss(gymId,matId,cur+qte);
-  DB.mouvements.unshift({id:uid(),type,gymId,matId,gymNom:gym.nom,matNom:mat.nom,qte,personne:pers,note,date:nowStr()});
+  // Si destination renseignée : ajouter au stock du gymnase destination
+  if(destId && type==='prise'){
+    const curDest=gs(destId,matId);
+    ss(destId,matId,curDest+qte);
+  }
+  const mvtData={id:uid(),type,gymId,matId,gymNom:gym.nom,matNom:mat.nom,qte,personne:pers,note,date:nowStr()};
+  if(destId)mvtData.destGymId=destId;
+  if(destGym)mvtData.destGymNom=destGym.nom;
+  DB.mouvements.unshift(mvtData);
   markDirty();closeM();toast('Mouvement enregistré');render(UI.tab);
 }
 

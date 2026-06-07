@@ -380,6 +380,18 @@ const totG=g=>DB.materiels.reduce((a,m)=>a+gs(g,m.id),0);
 const nowStr=()=>new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 const uid=()=>Math.random().toString(36).slice(2,8);
 const cats=()=>{const c={};DB.materiels.forEach(m=>{(c[m.categorie]||(c[m.categorie]=[])).push(m);});return c;};
+// Structure 3 niveaux : activite > categorie > materiels
+const actCats=()=>{
+  const a={};
+  DB.materiels.forEach(m=>{
+    const act=m.activite||'Sans activite';
+    const cat=m.categorie||'Sans categorie';
+    if(!a[act])a[act]={};
+    if(!a[act][cat])a[act][cat]=[];
+    a[act][cat].push(m);
+  });
+  return a;
+};
 const CI={Basketball:'ti-ball-basketball',Football:'ti-ball-football',Volleyball:'ti-ball-volleyball',Handball:'ti-ball',Gymnastique:'ti-yoga',Fitness:'ti-run',Natation:'ti-ripple',Tennis:'ti-ball-tennis'};
 const CC={Basketball:'var(--amber-bg)',Football:'var(--green-bg)',Volleyball:'var(--blue-bg)',Handball:'#e1f5ee',Gymnastique:'#f0e8fb',Fitness:'var(--red-bg)'};
 const CT={Basketball:'var(--amber-txt)',Football:'var(--green-txt)',Volleyball:'var(--blue-txt)',Handball:'#0f6e56',Gymnastique:'#533489',Fitness:'var(--red-txt)'};
@@ -651,7 +663,43 @@ function togTous(cat){
   UI.openCats['tous_'+cat]=!open;
 }
 
-function rCat(cat,items,gid,ed){
+// Rendu 3 niveaux : Activite > Categorie > Materiels
+function rActs(ac,gid,ed){
+  return Object.entries(ac).map(function([act,catsObj]){
+    const isOpen=UI.openCats['act_'+act]!==false;
+    const key=('act_'+act).replace(/\s/g,'_');
+    const actTot=Object.values(catsObj).flat().reduce((a,m)=>a+gs(gid,m.id),0);
+    const hasRupt=Object.values(catsObj).flat().some(m=>gs(gid,m.id)===0);
+    const hasSlow=Object.values(catsObj).flat().some(m=>{const q=gs(gid,m.id);return q>0&&q<4;});
+    const badge=hasRupt?'<span class="badge br">Rupture</span>':hasSlow?'<span class="badge ba">Faible</span>':'';
+    const chevCls='ti ti-chevron-down cv '+(isOpen?'on':'');
+    const bodyHidden=isOpen?'':'hidden';
+    const cats=Object.entries(catsObj).map(function([cat,items]){return rCat(cat,items,gid,ed,'act');}).join('');
+    return '<div class="cs" style="margin-bottom:10px">'
+      +'<div class="ch" style="background:var(--bg3)" onclick="togAct(\''+act+'\')">'
+      +'<span class="ci" style="background:var(--blue-bg);color:var(--blue-txt);font-size:11px;font-weight:600">ACT</span>'
+      +'<span class="ct" style="font-size:14px">'+act+'</span>'
+      +badge
+      +'<span class="badge bb">'+actTot+'</span>'
+      +'<i class="'+chevCls+'" id="chev-act-'+key+'" aria-hidden="true"></i>'
+      +'</div>'
+      +'<div class="cb '+bodyHidden+'" id="cb-act-'+key+'" style="border:none">'+cats+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function togAct(act){
+  const key=('act_'+act).replace(/\s/g,'_');
+  const b=document.getElementById('cb-act-'+key);
+  const c=document.getElementById('chev-act-'+key);
+  if(!b)return;
+  const open=!b.classList.contains('hidden');
+  b.classList.toggle('hidden',open);c.classList.toggle('on',!open);
+  UI.openCats['act_'+act]=!open;
+}
+
+
+function rCat(cat,items,gid,ed,parent){
   const isOpen=UI.openCats[cat]!==false;
   const tot=items.reduce((a,m)=>a+gs(gid,m.id),0);
   const rupt=items.some(m=>gs(gid,m.id)===0);
@@ -957,14 +1005,16 @@ function saveRenGym(gid){
 
 function mAddMat(){
   const ec=[...new Set(DB.materiels.map(m=>m.categorie))];
+  const ea=[...new Set(DB.materiels.map(m=>m.activite||'').filter(Boolean))];
   return `<div class="mo" onclick="if(event.target===this)closeM()">
   <div class="ms">
     <div class="mh"><h3>Nouveau matériel</h3><button class="btn btn-ico" onclick="closeM()"><i class="ti ti-x" aria-hidden="true"></i></button></div>
     <div class="mb">
       <div class="fg2">
-        <div class="fg"><label class="fl">Nom</label><input type="text" id="mn2" class="fi" placeholder="Ex: Raquette" autocomplete="off"></div>
-        <div class="fg"><label class="fl">Catégorie</label><input type="text" id="mc2" class="fi" placeholder="Ex: Badminton" list="cdl2" autocomplete="off"><datalist id="cdl2">${ec.map(c=>`<option value="${c}">`).join('')}</datalist></div>
+        <div class="fg"><label class="fl">Nom</label><input type="text" id="mn2" class="fi" placeholder="Ex: Ballon" autocomplete="off"></div>
+        <div class="fg"><label class="fl">Catégorie</label><input type="text" id="mc2" class="fi" placeholder="Ex: Football" list="cdl2" autocomplete="off"><datalist id="cdl2">\${ec.map(c=>\`<option value="\${c}">\`).join('')}</datalist></div>
       </div>
+      <div class="fg"><label class="fl">Activité</label><input type="text" id="ma2" class="fi" placeholder="Ex: Sports de balles" list="dal2" autocomplete="off"><datalist id="dal2">\${ea.map(a=>\`<option value="\${a}">\`).join('')}</datalist></div>
       <div class="fg"><label class="fl" style="margin-bottom:6px">Stock initial par gymnase</label>
         <div class="mg">${DB.gymnases.map(g=>`<div class="flex" style="justify-content:space-between;padding:7px 10px;background:var(--bg3);border-radius:var(--r)"><span style="font-size:12px">${g.nom}</span><input type="number" id="mq-${g.id}" class="fi" min="0" value="0" inputmode="numeric" style="width:60px;text-align:center"></div>`).join('')}</div>
       </div>
@@ -973,9 +1023,11 @@ function mAddMat(){
   </div></div>`;
 }
 function saveMat(){
-  const nom=document.getElementById('mn2').value.trim();const cat=document.getElementById('mc2').value.trim();
+  const nom=document.getElementById('mn2').value.trim();
+  const cat=document.getElementById('mc2').value.trim();
+  const act=document.getElementById('ma2').value.trim();
   if(!nom){toast('Entrez un nom');return;}
-  const id='m'+uid();DB.materiels.push({id,nom,categorie:cat||'Autre'});
+  const id='m'+uid();DB.materiels.push({id,nom,categorie:cat||'Autre',activite:act||'Sans activite'});
   DB.gymnases.forEach(g=>{const e=document.getElementById(`mq-${g.id}`);DB.stocks[`${g.id}_${id}`]=parseInt(e?.value)||0;});
   markDirty();closeM();toast(`${nom} ajouté`);render('stock');
 }
@@ -1035,8 +1087,8 @@ function exportExcel(){
   XLSX.utils.book_append_sheet(wb, wsA, 'Gymnases');
 
   // ── Onglet 2 : Materiels (réimportable) ──
-  const matRows = [['id','nom','categorie']];
-  DB.materiels.forEach(m => matRows.push([m.id, m.nom, m.categorie]));
+  const matRows = [['id','nom','categorie','activite']];
+  DB.materiels.forEach(m => matRows.push([m.id, m.nom, m.categorie, m.activite||'']));
   const wsB = XLSX.utils.aoa_to_sheet(matRows);
   wsB['!cols'] = [{wch:12},{wch:28},{wch:20}];
   XLSX.utils.book_append_sheet(wb, wsB, 'Materiels');
@@ -1238,7 +1290,7 @@ function importExcel(){
       for(let i=1;i<matData.length;i++){
         const row = matData[i];
         if(!row||!row[0]||!row[1])continue;
-        materiels.push({id:String(row[0]).trim(), nom:String(row[1]).trim(), categorie:String(row[2]||'Autre').trim()});
+        materiels.push({id:String(row[0]).trim(), nom:String(row[1]).trim(), categorie:String(row[2]||'Autre').trim(), activite:String(row[3]||'Sans activite').trim()});
       }
       if(materiels.length===0){toast('Aucun materiel trouve');return;}
 
@@ -1308,7 +1360,7 @@ function importExcel(){
             const newId = 'mx'+newMatId;
             newMatId++;
             newMatCount++;
-            mat = {id:newId, nom:nomMat, categorie:cat||'Autre'};
+            mat = {id:newId, nom:nomMat, categorie:cat||'Autre', activite:String(row[0]||'Sans activite').trim()};
             materiels.push(mat);
             // Initialiser à 0 pour tous les gymnases
             gymnases.forEach(function(g2){stocks[g2.id+'_'+newId]=0;});

@@ -1216,86 +1216,118 @@ function importExcel(){
       const data = new Uint8Array(e.target.result);
       const wb = XLSX.read(data, {type:'array'});
 
+      // Liste des onglets disponibles
+      const sheetNames = wb.SheetNames;
+      console.log('Onglets trouves:', sheetNames);
+
       // ── Lire Gymnases ──
       const wsGym = wb.Sheets['Gymnases'];
-      if(!wsGym){toast("Onglet Gymnases introuvable");return;}
+      if(!wsGym){toast('Onglet Gymnases introuvable. Onglets: '+sheetNames.join(', '));return;}
       const gymData = XLSX.utils.sheet_to_json(wsGym, {header:1});
       const gymnases = [];
       for(let i=1;i<gymData.length;i++){
         const row = gymData[i];
-        if(!row[0]||!row[1])continue;
+        if(!row||!row[0]||!row[1])continue;
         gymnases.push({id:String(row[0]).trim(), nom:String(row[1]).trim()});
       }
-      if(gymnases.length===0){toast('Aucun gymnase trouve');return;}
+      if(gymnases.length===0){toast('Aucun gymnase trouve dans onglet Gymnases');return;}
+      console.log('Gymnases lus:', gymnases.length);
 
       // ── Lire Materiels ──
       const wsMat = wb.Sheets['Materiels'];
-      if(!wsMat){toast("Onglet Materiels introuvable");return;}
+      if(!wsMat){toast('Onglet Materiels introuvable');return;}
       const matData = XLSX.utils.sheet_to_json(wsMat, {header:1});
       const materiels = [];
       for(let i=1;i<matData.length;i++){
         const row = matData[i];
-        if(!row[0]||!row[1])continue;
+        if(!row||!row[0]||!row[1])continue;
         materiels.push({id:String(row[0]).trim(), nom:String(row[1]).trim(), categorie:String(row[2]||'Autre').trim()});
       }
-      if(materiels.length===0){toast('Aucun materiel trouve');return;}
+      if(materiels.length===0){toast('Aucun materiel trouve dans onglet Materiels');return;}
+      console.log('Materiels lus:', materiels.length);
 
-      // ── Lire Stocks ──
-      const wsStk = wb.Sheets['Stocks'];
-      if(!wsStk){toast("Onglet Stocks introuvable");return;}
-      const stkData = XLSX.utils.sheet_to_json(wsStk, {header:1});
+      // ── Initialiser tous les stocks à 0 ──
       const stocks = {};
+      gymnases.forEach(g=>materiels.forEach(m=>{stocks[g.id+'_'+m.id]=0;}));
 
-      // Lire l'entête pour identifier les colonnes gymnases
-      const header = stkData[0] || [];
-      const gymCols = []; // {colIndex, gymId}
-      for(let c=2;c<header.length;c++){
-        const cellVal = String(header[c]||'').trim();
-        // Extraire l'id gymnase (premier mot avant espace ou parenthèse)
-        const gymId = cellVal.split(/[\s(]/)[0];
-        if(gymId) gymCols.push({col:c, gymId});
+      // ── Lire onglet Stocks (tableau croisé) ──
+      const wsStk = wb.Sheets['Stocks'];
+      if(wsStk){
+        const stkData = XLSX.utils.sheet_to_json(wsStk, {header:1});
+        const header = stkData[0] || [];
+        const gymCols = [];
+        for(let c=2;c<header.length;c++){
+          const cellVal = String(header[c]||'').trim();
+          const gymId = cellVal.split(/[ (]/)[0];
+          if(gymId) gymCols.push({col:c, gymId});
+        }
+        console.log('Colonnes gymnases dans Stocks:', gymCols);
+        for(let i=1;i<stkData.length;i++){
+          const row = stkData[i];
+          if(!row||!row[0])continue;
+          const matId = String(row[0]).trim();
+          gymCols.forEach(function(gc){
+            const qte = parseInt(row[gc.col])||0;
+            const key = gc.gymId+'_'+matId;
+            if(key in stocks) stocks[key] = Math.max(0,qte);
+          });
+        }
+        console.log('Stocks lus depuis onglet Stocks');
       }
 
-      // Remplir les stocks
-      for(let i=1;i<stkData.length;i++){
-        const row = stkData[i];
-        if(!row[0])continue;
-        const matId = String(row[0]).trim();
-        gymCols.forEach(({col,gymId})=>{
-          const qte = parseInt(row[col])||0;
-          stocks[`${gymId}_${matId}`] = Math.max(0,qte);
-        });
-      }
-
-      // Initialiser les stocks manquants à 0
-      gymnases.forEach(g=>{
-        materiels.forEach(m=>{
-          if(stocks[`${g.id}_${m.id}`]===undefined) stocks[`${g.id}_${m.id}`]=0;
-        });
+      // ── Lire onglets par gymnase ──
+      gymnases.forEach(function(g){
+        const sheetName = g.nom.substring(0,31).replace(/[/?*[\]:]/g,'-');
+        const wsG = wb.Sheets[sheetName] || wb.Sheets[g.nom];
+        if(!wsG){console.log('Onglet gymnase absent:', sheetName);return;}
+        console.log('Lecture onglet gymnase:', sheetName);
+        const rows = XLSX.utils.sheet_to_json(wsG, {header:1});
+        // Chercher ligne entete (contient 'Materiel' ou 'mat')
+        let hi = -1;
+        for(let i=0;i<rows.length;i++){
+          const r = rows[i];
+          if(r && r[1] && String(r[1]).toLowerCase().includes('mat')){hi=i;break;}
+        }
+        if(hi===-1){console.log('Entete non trouvee dans', sheetName);return;}
+        for(let i=hi+1;i<rows.length;i++){
+          const row = rows[i];
+          if(!row||!row[1])continue;
+          const nomMat = String(row[1]).trim();
+          const qte = parseInt(row[2]);
+          if(isNaN(qte))continue;
+          const mat = materiels.find(function(m){return m.nom.trim()===nomMat;});
+          if(mat){
+            const key = g.id+'_'+mat.id;
+            if(key in stocks) stocks[key] = Math.max(0,qte);
+          }
+        }
       });
 
-      // Confirmation avant remplacement
-      if(!confirm(`Importer ${gymnases.length} gymnase(s) et ${materiels.length} matériel(s) ?\nToutes les données actuelles seront remplacées.`)) return;
+      console.log('Import pret. Gymnases:', gymnases.length, 'Materiels:', materiels.length);
+
+      // ── Confirmation ──
+      if(!confirm('Importer '+gymnases.length+' gymnase(s) et '+materiels.length+' materiel(s) ?\nLes donnees actuelles seront remplacees.')) return;
 
       // ── Appliquer ──
       DB.gymnases = gymnases;
       DB.materiels = materiels;
       DB.stocks = stocks;
-      // Réinitialiser les catégories ouvertes
       UI.openCats = {};
       const c = cats();
-      Object.keys(c).forEach(k=>{UI.openCats[k]=true;});
-      UI.selGym = gymnases[0]?.id;
+      Object.keys(c).forEach(function(k){UI.openCats[k]=true;});
+      UI.selGym = gymnases[0] ? gymnases[0].id : null;
 
       markDirty();
       closeM();
-      toast(`✓ Import réussi — ${gymnases.length} gymnases, ${materiels.length} matériels`);
+      toast('Import reussi — '+gymnases.length+' gymnases, '+materiels.length+' materiels');
       showTab('stock');
+
     } catch(err){
+      console.error('Erreur import:', err);
       toast('Erreur import : '+err.message);
-      console.error(err);
     }
   };
+  reader.onerror = function(){toast('Impossible de lire le fichier');};
   reader.readAsArrayBuffer(file);
 }
 

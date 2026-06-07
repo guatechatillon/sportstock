@@ -1078,8 +1078,32 @@ function exportExcel(){
   wsD['!cols'] = [{wch:18},{wch:26},...DB.gymnases.map(()=>({wch:16})),{wch:10}];
   XLSX.utils.book_append_sheet(wb, wsD, 'Stock Global');
 
-  // ── Onglet 5 : Mouvements (lecture seule) ──
-  const mvtRows=[['Date','Type','Gymnase origine','Gymnase destination','Matériel','Quantité','Personne','Note']];
+  // ── Onglets 5+ : Un onglet par gymnase (lecture seule) ──
+  DB.gymnases.forEach(g=>{
+    const rows=[];
+    rows.push([g.nom]);
+    rows.push(['Date export:', new Date().toLocaleDateString('fr-FR')]);
+    rows.push([]);
+    rows.push(['Categorie','Materiel','Quantite','Statut']);
+    Object.entries(c).forEach(([cat,items])=>{
+      items.forEach(m=>{
+        const q=gs(g.id,m.id);
+        const statut=q===0?'Rupture':q<3?'Stock faible':'OK';
+        rows.push([cat,m.nom,q,statut]);
+      });
+      const subTotal=items.reduce((a,m)=>a+gs(g.id,m.id),0);
+      rows.push(['','Sous-total '+cat,subTotal,'']);
+      rows.push([]);
+    });
+    rows.push(['','TOTAL',totG(g.id),'']);
+    const wsGym=XLSX.utils.aoa_to_sheet(rows);
+    wsGym['!cols']=[{wch:18},{wch:26},{wch:12},{wch:14}];
+    const sheetName=g.nom.substring(0,31).replace(/[\\\/?*\[\]:]/g,'-');
+    XLSX.utils.book_append_sheet(wb,wsGym,sheetName);
+  });
+
+  // ── Dernier onglet : Mouvements (lecture seule) ──
+  const mvtRows=[['Date','Type','Gymnase origine','Gymnase destination','Materiel','Quantite','Personne','Note']];
   DB.mouvements.forEach(mv=>{
     const type=mv.type==='prise'?'Prise':mv.type==='retour'?'Retour':'Correction';
     mvtRows.push([mv.date,type,mv.gymNom,mv.destGymNom||'',mv.matNom,mv.qte,mv.personne,mv.note||'']);

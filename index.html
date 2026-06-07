@@ -237,6 +237,7 @@ select.fi{cursor:pointer}
       <div id="topbar-actions"></div>
       <button class="btn btn-s" id="save-btn-d" onclick="forceSave()" style="gap:5px"><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer</button>
       <button class="btn" onclick="exportExcel()" style="gap:5px;border-color:#1d6f42;color:#1d6f42;background:#e8f5e9"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Export Excel</button>
+      <button class="btn" onclick="openM('import')" style="gap:5px;border-color:#7c3aed;color:#7c3aed;background:#f3eeff"><i class="ti ti-file-upload" aria-hidden="true"></i> Import Excel</button>
     </div>
     <div id="content"></div>
   </div>
@@ -249,6 +250,7 @@ select.fi{cursor:pointer}
     <h1>SportStock</h1>
     <button class="btn btn-s" onclick="forceSave()" style="height:30px;padding:0 10px;font-size:12px" id="save-btn-m"><i class="ti ti-device-floppy" aria-hidden="true"></i></button>
     <button class="btn" onclick="exportExcel()" style="height:30px;padding:0 10px;font-size:12px;border-color:#1d6f42;color:#1d6f42;background:#e8f5e9"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i></button>
+    <button class="btn" onclick="openM('import')" style="height:30px;padding:0 10px;font-size:12px;border-color:#7c3aed;color:#7c3aed;background:#f3eeff"><i class="ti ti-file-upload" aria-hidden="true"></i></button>
     <span class="sdot" id="m-dot"></span>
     <button id="install-btn-m" onclick="installApp()" style="display:none;height:30px;padding:0 8px;border:0.5px solid var(--blue);border-radius:var(--r);background:var(--blue-bg);color:var(--blue-txt);font-size:11px;font-family:inherit;cursor:pointer;align-items:center;gap:4px">
       <i class="ti ti-download" aria-hidden="true"></i>
@@ -1108,6 +1110,217 @@ function exportExcel(){
   // Téléchargement
   XLSX.writeFile(wb, `SportStock_${dateStr}.xlsx`);
   toast('✓ Export Excel téléchargé');
+}
+
+// ══════════════════════════════
+// IMPORT EXCEL
+// ══════════════════════════════
+
+// Télécharger le modèle Excel à remplir
+function downloadTemplate(){
+  if(typeof XLSX === 'undefined'){toast('Librairie non chargée');return;}
+  const wb = XLSX.utils.book_new();
+
+  // Onglet Gymnases
+  const gymRows = [
+    ['id','nom'],
+    ['g1','Gymnase Pasteur'],
+    ['g2','Salle Olympique'],
+    ['g3','Centre Sportif Nord'],
+  ];
+  const wsGym = XLSX.utils.aoa_to_sheet(gymRows);
+  wsGym['!cols'] = [{wch:12},{wch:28}];
+  XLSX.utils.book_append_sheet(wb, wsGym, 'Gymnases');
+
+  // Onglet Materiels
+  const matRows = [
+    ['id','nom','categorie'],
+    ['m1','Ballon de basket','Basketball'],
+    ['m2','Ballon de foot','Football'],
+    ['m3','Filet de volley','Volleyball'],
+    ['m4','Tapis de gym','Gymnastique'],
+    ['m5','Corde à sauter','Fitness'],
+    ['m6','Ballon de handball','Handball'],
+  ];
+  const wsMat = XLSX.utils.aoa_to_sheet(matRows);
+  wsMat['!cols'] = [{wch:12},{wch:28},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, wsMat, 'Materiels');
+
+  // Onglet Stocks — colonnes = gymnases, lignes = materiels
+  const stockHeader = ['id_materiel','nom_materiel','g1 (Gymnase Pasteur)','g2 (Salle Olympique)','g3 (Centre Sportif Nord)'];
+  const stockRows = [
+    stockHeader,
+    ['m1','Ballon de basket',12,18,6],
+    ['m2','Ballon de foot',8,14,5],
+    ['m3','Filet de volley',2,4,1],
+    ['m4','Tapis de gym',15,10,8],
+    ['m5','Corde à sauter',20,30,12],
+    ['m6','Ballon de handball',6,10,4],
+  ];
+  const wsStk = XLSX.utils.aoa_to_sheet(stockRows);
+  wsStk['!cols'] = [{wch:14},{wch:24},{wch:22},{wch:22},{wch:22}];
+  XLSX.utils.book_append_sheet(wb, wsStk, 'Stocks');
+
+  // Onglet Instructions
+  const instrRows = [
+    ['INSTRUCTIONS IMPORT'],
+    [''],
+    ['1. Onglet "Gymnases" : remplissez id et nom de chaque gymnase'],
+    ['   - L'id doit être unique (ex: g1, g2, g3...)'],
+    ['   - Le nom peut contenir des espaces et accents'],
+    [''],
+    ['2. Onglet "Materiels" : remplissez id, nom et categorie'],
+    ['   - L'id doit être unique (ex: m1, m2, m3...)'],
+    ['   - La categorie regroupe les matériels (ex: Football, Basketball...)'],
+    [''],
+    ['3. Onglet "Stocks" : entrez les quantités'],
+    ['   - La 1ère colonne = id_materiel (doit correspondre à l'onglet Materiels)'],
+    ['   - Les colonnes suivantes = un gymnase par colonne'],
+    ['   - L'entête de colonne doit commencer par l'id du gymnase (ex: g1 ...)'],
+    ['   - Les quantités doivent être des nombres entiers >= 0'],
+    [''],
+    ['IMPORTANT : Ne modifiez pas le nom des onglets (Gymnases, Materiels, Stocks)'],
+    ['L'import remplacera TOUTES les données existantes'],
+  ];
+  const wsInstr = XLSX.utils.aoa_to_sheet(instrRows);
+  wsInstr['!cols'] = [{wch:80}];
+  XLSX.utils.book_append_sheet(wb, wsInstr, 'Instructions');
+
+  XLSX.writeFile(wb, 'ModeleImport_SportStock.xlsx');
+  toast('✓ Modèle téléchargé');
+}
+
+// Modal Import
+function mImport(){
+  return `<div class="mo" onclick="if(event.target===this)closeM()">
+  <div class="ms" style="max-width:480px">
+    <div class="mh"><h3><i class="ti ti-file-upload" style="color:#7c3aed" aria-hidden="true"></i> Import Excel</h3><button class="btn btn-ico" onclick="closeM()"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+    <div class="mb">
+      <div style="background:#f3eeff;border:0.5px solid #7c3aed;border-radius:var(--r);padding:12px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:500;color:#7c3aed;margin-bottom:6px"><i class="ti ti-info-circle" aria-hidden="true"></i> Comment faire</div>
+        <ol style="font-size:12px;color:#5b21b6;padding-left:16px;line-height:1.8">
+          <li>Exportez les données actuelles (bouton ci-dessous)</li>
+          <li>Modifiez le fichier dans Excel (onglets Gymnases, Materiels, Stocks)</li>
+          <li>Importez le fichier modifié ici</li>
+        </ol>
+      </div>
+      <div style="margin-bottom:14px">
+        <button class="btn btn-full" onclick="exportExcel()" style="border-color:#1d6f42;color:#1d6f42;background:#e8f5e9;height:40px">
+          <i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Exporter les données actuelles (point de départ)
+        </button>
+      </div>
+      <div class="fg">
+        <label class="fl">Sélectionner votre fichier Excel rempli</label>
+        <input type="file" id="import-file" accept=".xlsx,.xls" class="fi" style="padding:6px 10px">
+      </div>
+      <div style="background:var(--red-bg);border:0.5px solid var(--red);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--red-txt)">
+        <i class="ti ti-alert-triangle" aria-hidden="true"></i> <strong>Attention</strong> — L'import remplace gymnases, matériels et stocks. Les mouvements sont conservés.
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeM()">Annuler</button>
+      <button class="btn" onclick="importExcel()" style="background:#7c3aed;border-color:#7c3aed;color:#fff;font-weight:500">
+        <i class="ti ti-file-upload" aria-hidden="true"></i> Importer
+      </button>
+    </div>
+  </div></div>`;
+}
+
+// Importer et traiter le fichier Excel
+function importExcel(){
+  if(typeof XLSX === 'undefined'){toast('Librairie non chargée');return;}
+  const fileInput = document.getElementById('import-file');
+  if(!fileInput || !fileInput.files || !fileInput.files[0]){
+    toast('Sélectionnez un fichier Excel');return;
+  }
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+
+      // ── Lire Gymnases ──
+      const wsGym = wb.Sheets['Gymnases'];
+      if(!wsGym){toast('Onglet "Gymnases" introuvable');return;}
+      const gymData = XLSX.utils.sheet_to_json(wsGym, {header:1});
+      const gymnases = [];
+      for(let i=1;i<gymData.length;i++){
+        const row = gymData[i];
+        if(!row[0]||!row[1])continue;
+        gymnases.push({id:String(row[0]).trim(), nom:String(row[1]).trim()});
+      }
+      if(gymnases.length===0){toast('Aucun gymnase trouvé dans le fichier');return;}
+
+      // ── Lire Materiels ──
+      const wsMat = wb.Sheets['Materiels'];
+      if(!wsMat){toast('Onglet "Materiels" introuvable');return;}
+      const matData = XLSX.utils.sheet_to_json(wsMat, {header:1});
+      const materiels = [];
+      for(let i=1;i<matData.length;i++){
+        const row = matData[i];
+        if(!row[0]||!row[1])continue;
+        materiels.push({id:String(row[0]).trim(), nom:String(row[1]).trim(), categorie:String(row[2]||'Autre').trim()});
+      }
+      if(materiels.length===0){toast('Aucun matériel trouvé dans le fichier');return;}
+
+      // ── Lire Stocks ──
+      const wsStk = wb.Sheets['Stocks'];
+      if(!wsStk){toast('Onglet "Stocks" introuvable');return;}
+      const stkData = XLSX.utils.sheet_to_json(wsStk, {header:1});
+      const stocks = {};
+
+      // Lire l'entête pour identifier les colonnes gymnases
+      const header = stkData[0] || [];
+      const gymCols = []; // {colIndex, gymId}
+      for(let c=2;c<header.length;c++){
+        const cellVal = String(header[c]||'').trim();
+        // Extraire l'id gymnase (premier mot avant espace ou parenthèse)
+        const gymId = cellVal.split(/[\s(]/)[0];
+        if(gymId) gymCols.push({col:c, gymId});
+      }
+
+      // Remplir les stocks
+      for(let i=1;i<stkData.length;i++){
+        const row = stkData[i];
+        if(!row[0])continue;
+        const matId = String(row[0]).trim();
+        gymCols.forEach(({col,gymId})=>{
+          const qte = parseInt(row[col])||0;
+          stocks[`${gymId}_${matId}`] = Math.max(0,qte);
+        });
+      }
+
+      // Initialiser les stocks manquants à 0
+      gymnases.forEach(g=>{
+        materiels.forEach(m=>{
+          if(stocks[`${g.id}_${m.id}`]===undefined) stocks[`${g.id}_${m.id}`]=0;
+        });
+      });
+
+      // Confirmation avant remplacement
+      if(!confirm(`Importer ${gymnases.length} gymnase(s) et ${materiels.length} matériel(s) ?\nToutes les données actuelles seront remplacées.`)) return;
+
+      // ── Appliquer ──
+      DB.gymnases = gymnases;
+      DB.materiels = materiels;
+      DB.stocks = stocks;
+      // Réinitialiser les catégories ouvertes
+      UI.openCats = {};
+      const c = cats();
+      Object.keys(c).forEach(k=>{UI.openCats[k]=true;});
+      UI.selGym = gymnases[0]?.id;
+
+      markDirty();
+      closeM();
+      toast(`✓ Import réussi — ${gymnases.length} gymnases, ${materiels.length} matériels`);
+      showTab('stock');
+    } catch(err){
+      toast('Erreur lors de l'import : '+err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 // ══════════════════════════════

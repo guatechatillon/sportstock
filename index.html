@@ -580,7 +580,7 @@ function rStock(){
     <button class="btn btn-sm" style="flex:1" onclick="startEd()"><i class="ti ti-pencil" aria-hidden="true"></i> Modifier</button>
     <button class="btn btn-p btn-sm" style="flex:1" onclick="openM('addMat')"><i class="ti ti-plus" aria-hidden="true"></i> Matériel</button>
   </div>`:''}
-  ${gid==='tous'?rTous(c):Object.entries(c).map(([cat,items])=>rCat(cat,items,gid,ed)).join('')}`;
+  ${gid==='tous'?rTous(actCats()):rActs(actCats(),gid,ed)}`;
 }
 
 // VUE TOUS LES GYMNASES
@@ -1418,8 +1418,29 @@ async function init(){
     DB.materiels = data.materiels || [];
     DB.stocks = data.stocks || {};
     DB.mouvements = data.mouvements || [];
+
+    // Migration : ajouter activite si absent
+    const actMap = {
+      'Football':'Sports de balles','Handball':'Sports de balles',
+      'Basketball':'Sports de balles','Volleyball':'Sports de balles',
+      'Volley':'Sports de balles','Basket':'Sports de balles',
+      'Gymnastique':'Gymnique','Fitness':'Gymnique','Gym':'Gymnique',
+      'Athletisme':'Athletisme','Natation':'Natation','Tennis':'Tennis de table',
+      'Badminton':'Badminton'
+    };
+    let migrated = false;
+    DB.materiels.forEach(m=>{
+      if(!m.activite){
+        m.activite = actMap[m.categorie] || m.categorie;
+        migrated = true;
+      }
+    });
+    if(migrated){ markDirty(); }
+
     if(!UI.selGym && DB.gymnases.length>0) UI.selGym = DB.gymnases[0].id;
     const c=cats();Object.keys(c).forEach(k=>{if(UI.openCats[k]===undefined)UI.openCats[k]=true;});
+    // Init openCats pour activites
+    Object.keys(actCats()).forEach(k=>{if(UI.openCats['act_'+k]===undefined)UI.openCats['act_'+k]=true;});
     setSyncStatus('ok');
     document.getElementById('loading').style.display='none';
     render('dash');

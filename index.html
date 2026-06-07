@@ -1021,7 +1021,7 @@ function saveEditSt(gid){
 // EXPORT EXCEL
 // ══════════════════════════════
 function exportExcel(){
-  if(typeof XLSX === 'undefined'){toast('Librairie non chargée, réessayez');return;}
+  if(typeof XLSX === 'undefined'){toast('Librairie non chargee');return;}
   const wb = XLSX.utils.book_new();
   const c = cats();
   const dateStr = new Date().toLocaleDateString('fr-FR').replace(/\//g,'-');
@@ -1098,76 +1098,47 @@ function exportExcel(){
 
 // Télécharger le modèle Excel à remplir
 function downloadTemplate(){
-  if(typeof XLSX === 'undefined'){toast('Librairie non chargée');return;}
+  if(typeof XLSX === 'undefined'){toast('Librairie non chargee');return;}
   const wb = XLSX.utils.book_new();
 
-  // Onglet Gymnases
-  const gymRows = [
-    ['id','nom'],
-    ['g1','Gymnase Pasteur'],
-    ['g2','Salle Olympique'],
-    ['g3','Centre Sportif Nord'],
-  ];
-  const wsGym = XLSX.utils.aoa_to_sheet(gymRows);
-  wsGym['!cols'] = [{wch:12},{wch:28}];
-  XLSX.utils.book_append_sheet(wb, wsGym, 'Gymnases');
+  const gymRows = [['id','nom'],['g1','Gymnase Pasteur'],['g2','Salle Olympique'],['g3','Centre Sportif Nord']];
+  const wsA = XLSX.utils.aoa_to_sheet(gymRows);
+  wsA['!cols'] = [{wch:12},{wch:28}];
+  XLSX.utils.book_append_sheet(wb, wsA, 'Gymnases');
 
-  // Onglet Materiels
-  const matRows = [
-    ['id','nom','categorie'],
-    ['m1','Ballon de basket','Basketball'],
-    ['m2','Ballon de foot','Football'],
-    ['m3','Filet de volley','Volleyball'],
-    ['m4','Tapis de gym','Gymnastique'],
-    ['m5','Corde à sauter','Fitness'],
-    ['m6','Ballon de handball','Handball'],
-  ];
-  const wsMat = XLSX.utils.aoa_to_sheet(matRows);
-  wsMat['!cols'] = [{wch:12},{wch:28},{wch:20}];
-  XLSX.utils.book_append_sheet(wb, wsMat, 'Materiels');
+  const matRows = [['id','nom','categorie'],['m1','Ballon de basket','Basketball'],['m2','Ballon de foot','Football'],['m3','Filet de volley','Volleyball'],['m4','Tapis de gym','Gymnastique'],['m5','Corde a sauter','Fitness'],['m6','Ballon de handball','Handball']];
+  const wsB = XLSX.utils.aoa_to_sheet(matRows);
+  wsB['!cols'] = [{wch:12},{wch:28},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, wsB, 'Materiels');
 
-  // Onglet Stocks — colonnes = gymnases, lignes = materiels
-  const stockHeader = ['id_materiel','nom_materiel','g1 (Gymnase Pasteur)','g2 (Salle Olympique)','g3 (Centre Sportif Nord)'];
-  const stockRows = [
-    stockHeader,
-    ['m1','Ballon de basket',12,18,6],
-    ['m2','Ballon de foot',8,14,5],
-    ['m3','Filet de volley',2,4,1],
-    ['m4','Tapis de gym',15,10,8],
-    ['m5','Corde à sauter',20,30,12],
-    ['m6','Ballon de handball',6,10,4],
-  ];
-  const wsStk = XLSX.utils.aoa_to_sheet(stockRows);
-  wsStk['!cols'] = [{wch:14},{wch:24},{wch:22},{wch:22},{wch:22}];
-  XLSX.utils.book_append_sheet(wb, wsStk, 'Stocks');
+  const stkHeader = ['id_materiel','nom_materiel','g1 (Gymnase Pasteur)','g2 (Salle Olympique)','g3 (Centre Sportif Nord)'];
+  const stkRows = [stkHeader,['m1','Ballon de basket',12,18,6],['m2','Ballon de foot',8,14,5],['m3','Filet de volley',2,4,1],['m4','Tapis de gym',15,10,8],['m5','Corde a sauter',20,30,12],['m6','Ballon de handball',6,10,4]];
+  const wsC = XLSX.utils.aoa_to_sheet(stkRows);
+  wsC['!cols'] = [{wch:14},{wch:24},{wch:22},{wch:22},{wch:22}];
+  XLSX.utils.book_append_sheet(wb, wsC, 'Stocks');
 
-  // Onglet Instructions
   const instrRows = [
-    ['INSTRUCTIONS IMPORT'],
-    [''],
-    ['1. Onglet "Gymnases" : remplissez id et nom de chaque gymnase'],
-    ['   - L'id doit être unique (ex: g1, g2, g3...)'],
-    ['   - Le nom peut contenir des espaces et accents'],
-    [''],
-    ['2. Onglet "Materiels" : remplissez id, nom et categorie'],
-    ['   - L'id doit être unique (ex: m1, m2, m3...)'],
-    ['   - La categorie regroupe les matériels (ex: Football, Basketball...)'],
-    [''],
-    ['3. Onglet "Stocks" : entrez les quantités'],
-    ['   - La 1ère colonne = id_materiel (doit correspondre à l'onglet Materiels)'],
-    ['   - Les colonnes suivantes = un gymnase par colonne'],
-    ['   - L'entête de colonne doit commencer par l'id du gymnase (ex: g1 ...)'],
-    ['   - Les quantités doivent être des nombres entiers >= 0'],
-    [''],
-    ['IMPORTANT : Ne modifiez pas le nom des onglets (Gymnases, Materiels, Stocks)'],
-    ['L'import remplacera TOUTES les données existantes'],
+    ['INSTRUCTIONS IMPORT'],[''],
+    ['1. Onglet Gymnases : remplissez id et nom de chaque gymnase'],
+    ['   - id unique exemple : g1, g2, g3 ...'],
+    ['   - nom peut contenir des espaces'],[''],
+    ['2. Onglet Materiels : remplissez id, nom et categorie'],
+    ['   - id unique exemple : m1, m2, m3 ...'],
+    ['   - categorie regroupe les materiels (Football, Basketball ...)'],[''],
+    ['3. Onglet Stocks : entrez les quantites'],
+    ['   - colonne 1 = id materiel (doit correspondre onglet Materiels)'],
+    ['   - colonnes suivantes = un gymnase par colonne'],
+    ['   - entete colonne doit commencer par id gymnase (ex: g1 ...)'],
+    ['   - quantites = nombres entiers >= 0'],[''],
+    ['IMPORTANT : Ne modifiez pas le nom des onglets'],
+    ['import remplacera toutes les donnees existantes'],
   ];
-  const wsInstr = XLSX.utils.aoa_to_sheet(instrRows);
-  wsInstr['!cols'] = [{wch:80}];
-  XLSX.utils.book_append_sheet(wb, wsInstr, 'Instructions');
+  const wsD = XLSX.utils.aoa_to_sheet(instrRows);
+  wsD['!cols'] = [{wch:80}];
+  XLSX.utils.book_append_sheet(wb, wsD, 'Instructions');
 
-  XLSX.writeFile(wb, 'ModeleImport_SportStock.xlsx');
-  toast('✓ Modèle téléchargé');
+  XLSX.writeFile(wb, 'ModeleImport_GestionMateriel.xlsx');
+  toast('Modele telecharge');
 }
 
 // Modal Import
@@ -1208,10 +1179,10 @@ function mImport(){
 
 // Importer et traiter le fichier Excel
 function importExcel(){
-  if(typeof XLSX === 'undefined'){toast('Librairie non chargée');return;}
+  if(typeof XLSX === 'undefined'){toast('Librairie non chargee');return;}
   const fileInput = document.getElementById('import-file');
   if(!fileInput || !fileInput.files || !fileInput.files[0]){
-    toast('Sélectionnez un fichier Excel');return;
+    toast('Selectionnez un fichier Excel');return;
   }
   const file = fileInput.files[0];
   const reader = new FileReader();
@@ -1222,7 +1193,7 @@ function importExcel(){
 
       // ── Lire Gymnases ──
       const wsGym = wb.Sheets['Gymnases'];
-      if(!wsGym){toast('Onglet "Gymnases" introuvable');return;}
+      if(!wsGym){toast("Onglet Gymnases introuvable");return;}
       const gymData = XLSX.utils.sheet_to_json(wsGym, {header:1});
       const gymnases = [];
       for(let i=1;i<gymData.length;i++){
@@ -1230,11 +1201,11 @@ function importExcel(){
         if(!row[0]||!row[1])continue;
         gymnases.push({id:String(row[0]).trim(), nom:String(row[1]).trim()});
       }
-      if(gymnases.length===0){toast('Aucun gymnase trouvé dans le fichier');return;}
+      if(gymnases.length===0){toast('Aucun gymnase trouve');return;}
 
       // ── Lire Materiels ──
       const wsMat = wb.Sheets['Materiels'];
-      if(!wsMat){toast('Onglet "Materiels" introuvable');return;}
+      if(!wsMat){toast("Onglet Materiels introuvable");return;}
       const matData = XLSX.utils.sheet_to_json(wsMat, {header:1});
       const materiels = [];
       for(let i=1;i<matData.length;i++){
@@ -1242,11 +1213,11 @@ function importExcel(){
         if(!row[0]||!row[1])continue;
         materiels.push({id:String(row[0]).trim(), nom:String(row[1]).trim(), categorie:String(row[2]||'Autre').trim()});
       }
-      if(materiels.length===0){toast('Aucun matériel trouvé dans le fichier');return;}
+      if(materiels.length===0){toast('Aucun materiel trouve');return;}
 
       // ── Lire Stocks ──
       const wsStk = wb.Sheets['Stocks'];
-      if(!wsStk){toast('Onglet "Stocks" introuvable');return;}
+      if(!wsStk){toast("Onglet Stocks introuvable");return;}
       const stkData = XLSX.utils.sheet_to_json(wsStk, {header:1});
       const stocks = {};
 
@@ -1296,7 +1267,7 @@ function importExcel(){
       toast(`✓ Import réussi — ${gymnases.length} gymnases, ${materiels.length} matériels`);
       showTab('stock');
     } catch(err){
-      toast('Erreur lors de l'import : '+err.message);
+      toast('Erreur import : '+err.message);
       console.error(err);
     }
   };

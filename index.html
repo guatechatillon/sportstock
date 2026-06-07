@@ -1021,95 +1021,75 @@ function saveEditSt(gid){
 // EXPORT EXCEL
 // ══════════════════════════════
 function exportExcel(){
-  // Vérifier que la librairie est chargée
-  if(typeof XLSX === 'undefined'){
-    toast('Erreur : librairie Excel non chargée, réessayez');
-    console.error('XLSX non défini');
-    return;
-  }
+  if(typeof XLSX === 'undefined'){toast('Librairie non chargée, réessayez');return;}
   const wb = XLSX.utils.book_new();
   const c = cats();
   const dateStr = new Date().toLocaleDateString('fr-FR').replace(/\//g,'-');
 
-  // ── Feuille 1 : Stock global (tous les gymnases) ──
-  const globalRows = [];
-  // En-tête
-  globalRows.push(['Catégorie','Matériel',...DB.gymnases.map(g=>g.nom),'TOTAL']);
+  // ── Onglet 1 : Gymnases (réimportable) ──
+  const gymRows = [['id','nom']];
+  DB.gymnases.forEach(g => gymRows.push([g.id, g.nom]));
+  const wsA = XLSX.utils.aoa_to_sheet(gymRows);
+  wsA['!cols'] = [{wch:12},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, wsA, 'Gymnases');
+
+  // ── Onglet 2 : Materiels (réimportable) ──
+  const matRows = [['id','nom','categorie']];
+  DB.materiels.forEach(m => matRows.push([m.id, m.nom, m.categorie]));
+  const wsB = XLSX.utils.aoa_to_sheet(matRows);
+  wsB['!cols'] = [{wch:12},{wch:28},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, wsB, 'Materiels');
+
+  // ── Onglet 3 : Stocks (réimportable) ──
+  const stkHeader = ['id_materiel','nom_materiel',...DB.gymnases.map(g=>g.id+' ('+g.nom+')')];
+  const stkRows = [stkHeader];
+  DB.materiels.forEach(m => {
+    const row = [m.id, m.nom];
+    DB.gymnases.forEach(g => row.push(gs(g.id,m.id)));
+    stkRows.push(row);
+  });
+  const wsC = XLSX.utils.aoa_to_sheet(stkRows);
+  wsC['!cols'] = [{wch:14},{wch:26},...DB.gymnases.map(g=>({wch:Math.max(16,g.nom.length+6)}))];
+  XLSX.utils.book_append_sheet(wb, wsC, 'Stocks');
+
+  // ── Onglet 4 : Stock Global (synthèse lecture seule) ──
+  const globalRows = [['Catégorie','Matériel',...DB.gymnases.map(g=>g.nom),'TOTAL']];
   Object.entries(c).forEach(([cat,items])=>{
     items.forEach(m=>{
-      const row=[cat, m.nom];
+      const row=[cat,m.nom];
       let total=0;
-      DB.gymnases.forEach(g=>{
-        const q=gs(g.id,m.id);
-        row.push(q);
-        total+=q;
-      });
+      DB.gymnases.forEach(g=>{const q=gs(g.id,m.id);row.push(q);total+=q;});
       row.push(total);
       globalRows.push(row);
     });
-    // Ligne sous-total par catégorie
     const subRow=['','Sous-total '+cat];
-    let catTotal=0;
-    DB.gymnases.forEach(g=>{
-      const t=items.reduce((a,m2)=>a+gs(g.id,m2.id),0);
-      subRow.push(t);catTotal+=t;
-    });
-    subRow.push(catTotal);
+    let catTot=0;
+    DB.gymnases.forEach(g=>{const t=items.reduce((a,m2)=>a+gs(g.id,m2.id),0);subRow.push(t);catTot+=t;});
+    subRow.push(catTot);
     globalRows.push(subRow);
-    globalRows.push([]); // ligne vide entre catégories
+    globalRows.push([]);
   });
-  // Total général
   const totalRow=['','TOTAL GÉNÉRAL'];
   let grandTotal=0;
-  DB.gymnases.forEach(g=>{
-    const t=totG(g.id);totalRow.push(t);grandTotal+=t;
-  });
+  DB.gymnases.forEach(g=>{const t=totG(g.id);totalRow.push(t);grandTotal+=t;});
   totalRow.push(grandTotal);
   globalRows.push(totalRow);
+  const wsD = XLSX.utils.aoa_to_sheet(globalRows);
+  wsD['!cols'] = [{wch:18},{wch:26},...DB.gymnases.map(()=>({wch:16})),{wch:10}];
+  XLSX.utils.book_append_sheet(wb, wsD, 'Stock Global');
 
-  const ws1 = XLSX.utils.aoa_to_sheet(globalRows);
-
-  // Style largeurs colonnes
-  ws1['!cols'] = [{wch:18},{wch:24},...DB.gymnases.map(()=>({wch:16})),{wch:10}];
-
-  XLSX.utils.book_append_sheet(wb, ws1, 'Stock Global');
-
-  // ── Feuille 2 : Une feuille par gymnase ──
-  DB.gymnases.forEach(g=>{
-    const rows=[];
-    rows.push([g.nom]);
-    rows.push(['Date export:', new Date().toLocaleDateString('fr-FR')]);
-    rows.push([]);
-    rows.push(['Catégorie','Matériel','Quantité','Statut']);
-    Object.entries(c).forEach(([cat,items])=>{
-      items.forEach(m=>{
-        const q=gs(g.id,m.id);
-        const statut=q===0?'Rupture':q<3?'Stock faible':'OK';
-        rows.push([cat,m.nom,q,statut]);
-      });
-    });
-    rows.push([]);
-    rows.push(['','TOTAL',totG(g.id),'']);
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:18},{wch:24},{wch:12},{wch:14}];
-    // Nom de feuille max 31 chars, sans caractères interdits Excel : \ / ? * [ ]
-    const sheetName=g.nom.substring(0,31).replace(/[\\\/\?\*\[\]\:]/g,'-');
-    XLSX.utils.book_append_sheet(wb,ws,sheetName);
-  });
-
-  // ── Feuille 3 : Historique des mouvements ──
-  const mvtRows=[['Date','Type','Gymnase','Matériel','Quantité','Personne','Note']];
+  // ── Onglet 5 : Mouvements (lecture seule) ──
+  const mvtRows=[['Date','Type','Gymnase origine','Gymnase destination','Matériel','Quantité','Personne','Note']];
   DB.mouvements.forEach(mv=>{
     const type=mv.type==='prise'?'Prise':mv.type==='retour'?'Retour':'Correction';
-    mvtRows.push([mv.date,type,mv.gymNom,mv.matNom,mv.qte,mv.personne,mv.note||'']);
+    mvtRows.push([mv.date,type,mv.gymNom,mv.destGymNom||'',mv.matNom,mv.qte,mv.personne,mv.note||'']);
   });
-  const ws3=XLSX.utils.aoa_to_sheet(mvtRows);
-  ws3['!cols']=[{wch:14},{wch:12},{wch:22},{wch:22},{wch:10},{wch:18},{wch:24}];
-  XLSX.utils.book_append_sheet(wb,ws3,'Mouvements');
+  const wsE = XLSX.utils.aoa_to_sheet(mvtRows);
+  wsE['!cols']=[{wch:14},{wch:12},{wch:22},{wch:22},{wch:22},{wch:10},{wch:18},{wch:24}];
+  XLSX.utils.book_append_sheet(wb,wsE,'Mouvements');
 
-  // Téléchargement
-  XLSX.writeFile(wb, `SportStock_${dateStr}.xlsx`);
-  toast('✓ Export Excel téléchargé');
+  XLSX.writeFile(wb, 'GestionMateriel_'+dateStr+'.xlsx');
+  toast('✓ Export téléchargé — réimportable');
 }
 
 // ══════════════════════════════

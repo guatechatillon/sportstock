@@ -774,9 +774,9 @@ function rCat(cat,items,gid,ed,parent){
             ${chg?`<span style="font-size:10px;color:var(--amber-txt)">était ${q}</span>`:''}
           </div>
         </div>`;}
-        const matBg=parent?'background:#fff0f0;border-left:3px solid #cc3333':'';
-        return `<div class="sr" style="padding-left:${parent?'48px':'14px'};${matBg}">
-          <span class="sn" style="color:#5a0000;font-weight:500">${m.nom}</span>
+        const matBg=parent?'background:#fff5f5;border-left:2px solid #e88080':'';
+        return `<div class="sr" style="padding-left:${parent?'52px':'14px'};${matBg}">
+          <span class="sn" style="color:#6b2020;font-weight:500">${m.nom}</span>
           <span class="sq" style="color:${col}">${q}</span>
           <div class="flex">
             <button class="btn btn-xs btn-ok" onclick="qMove('${gid}','${m.id}','retour')">+1</button>

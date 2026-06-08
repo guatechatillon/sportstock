@@ -435,16 +435,24 @@ function showTab(t){
 }
 
 function buildTopAct(t){
-  const el=document.getElementById('topbar-actions');if(!el)return;
-  if(t==='dash')el.innerHTML=`<button class="btn btn-p btn-sm" onclick="openM('mvt')"><i class="ti ti-plus" aria-hidden="true"></i> Mouvement</button>`;
-  else if(t==='gyms')el.innerHTML=`<button class="btn btn-p btn-sm" onclick="openM('addGym')"><i class="ti ti-plus" aria-hidden="true"></i> Gymnase</button>`;
-  else if(t==='stock')el.innerHTML=`<div id="stock-act"></div>`;
-  else if(t==='mvts')el.innerHTML=`<button class="btn btn-p btn-sm" onclick="openM('mvt')"><i class="ti ti-plus" aria-hidden="true"></i> Mouvement</button>`;
-  if(t==='stock')buildStockAct();
+  const el=document.getElementById('topbar-actions');
+  if(el){
+    const btnMvt='<button class="btn btn-p btn-sm" onclick="openM(&quot;mvt&quot;)"><i class="ti ti-plus"></i> Mouvement</button>';
+    const btnGym='<button class="btn btn-p btn-sm" onclick="openM(&quot;addGym&quot;)"><i class="ti ti-plus"></i> Gymnase</button>';
+    if(t==='dash')el.innerHTML=btnMvt;
+    else if(t==='gyms')el.innerHTML=btnGym;
+    else if(t==='stock')el.innerHTML='<div id="stock-act"></div>';
+    else if(t==='mvts')el.innerHTML=btnMvt;
+  }
+  if(t==='stock') setTimeout(buildStockAct, 20);
 }
 
 function buildStockAct(){
-  const el=document.getElementById('stock-act');if(!el)return;
+  const el=document.getElementById('stock-act');
+  if(!el){
+    // Sur mobile, le slot est dans le contenu - pas dans la topbar
+    return;
+  }
   const nb=Object.keys(PE).length;
   const isTous=UI.selGym==='tous';
   if(isTous){
@@ -566,24 +574,45 @@ function rGyms(){
 // STOCK
 function rStock(){
   const gid=UI.selGym;const c=cats();const ed=UI.editMode;const nb=Object.keys(PE).length;
-  return `
-  <div class="gscroll">
-    <button class="gc ${'tous'===gid?'on':''}" onclick="selGym('tous')">🏆 Tous</button>
-    ${DB.gymnases.map(g=>`<button class="gc ${gid===g.id?'on':''}" onclick="selGym('${g.id}')">${isMob()?g.nom.split(' ').slice(0,2).join(' '):g.nom}</button>`).join('')}
-  </div>
-  ${gid!=='tous'&&ed?`<div class="eb"><i class="ti ti-pencil-minus" aria-hidden="true"></i><span>Modifiez noms, catégories et quantités</span><div class="sp"></div>${nb>0?`<span style="font-weight:500">${nb} modif.</span>`:''}</div>`:''}
-  ${gid!=='tous'&&isMob()&&ed?`<div class="flex" style="margin-bottom:9px">
-    <button class="btn btn-sm" style="flex:1" onclick="cancelEd()"><i class="ti ti-x" aria-hidden="true"></i> Annuler</button>
-    <button class="btn btn-s btn-sm" style="flex:2" id="save-ed-btn-m" onclick="applyEd()" ${nb===0?'disabled':''}><i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer ${nb>0?`(${nb})`:''}</button>
-  </div>`:''}
-  ${gid!=='tous'&&isMob()&&!ed?`<div class="flex" style="margin-bottom:9px">
-    <button class="btn btn-sm" style="flex:1" onclick="startEd()"><i class="ti ti-pencil" aria-hidden="true"></i> Modifier</button>
-    <button class="btn btn-p btn-sm" style="flex:1" onclick="openM('addMat')"><i class="ti ti-plus" aria-hidden="true"></i> Matériel</button>
-  </div>`:''}
-  ${gid==='tous'?rTous(actCats()):rActs(actCats(),gid,ed)}`;
+  let html='';
+
+  // Chips gymnases
+  html+='<div class="gscroll">';
+  html+='<button class="gc '+(gid==='tous'?'on':'')+'" onclick="selGym(\'tous\')">🏆 Tous</button>';
+  DB.gymnases.forEach(function(g){
+    const label=isMob()?g.nom.split(' ').slice(0,2).join(' '):g.nom;
+    html+='<button class="gc '+(gid===g.id?'on':'')+'" onclick="selGym(\''+g.id+'\')">' +label+'</button>';
+  });
+  html+='</div>';
+
+  // Boutons modifier/enregistrer (sauf vue Tous)
+  if(gid!=='tous'){
+    if(ed){
+      html+='<div class="eb"><i class="ti ti-pencil-minus" aria-hidden="true"></i><span>Modifiez noms, catégories et quantités</span><div class="sp"></div>'+(nb>0?'<span style="font-weight:500">'+nb+' modif.</span>':'')+'</div>';
+      if(isMob()){
+        html+='<div class="flex" style="margin-bottom:9px">';
+        html+='<button class="btn btn-sm" style="flex:1" onclick="cancelEd()"><i class="ti ti-x" aria-hidden="true"></i> Annuler</button>';
+        html+='<button class="btn btn-s btn-sm" style="flex:2" id="save-ed-btn-m" onclick="applyEd()" '+(nb===0?'disabled':'')+'>'+
+          '<i class="ti ti-device-floppy" aria-hidden="true"></i> Enregistrer '+(nb>0?'('+nb+')':'')+'</button></div>';
+      }
+    } else if(isMob()){
+      html+='<div class="flex" style="margin-bottom:9px">';
+      html+='<button class="btn btn-sm" style="flex:1" onclick="startEd()"><i class="ti ti-pencil" aria-hidden="true"></i> Modifier</button>';
+      html+='<button class="btn btn-p btn-sm" style="flex:1" onclick="openM(\'addMat\')"><i class="ti ti-plus" aria-hidden="true"></i> Matériel</button>';
+      html+='</div>';
+    }
+  }
+
+  // Contenu
+  if(gid==='tous'){
+    html+=rTous(actCats());
+  } else {
+    html+=rActs(actCats(),gid,ed);
+  }
+  return html;
 }
 
-// VUE TOUS LES GYMNASES
+
 function rTous(ac){
   const grandTotal=DB.materiels.reduce(function(a,m){return a+totM(m.id);},0);
   const flatCats={};
@@ -710,7 +739,12 @@ function rCat(cat,items,gid,ed,parent){
   </div>`;
 }
 
-function selGym(g){UI.selGym=g;PE={};render('stock');buildStockAct();}
+function selGym(g){
+  UI.selGym=g;
+  PE={};
+  render('stock');
+  setTimeout(buildStockAct,10);
+}
 function togCat(cat){
   const key=cat.replace(/\s/g,'_');
   const b=document.getElementById(`cb-${key}`);const c=document.getElementById(`chev-${key}`);if(!b)return;

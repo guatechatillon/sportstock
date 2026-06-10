@@ -641,14 +641,8 @@ function rStock(){
   const gid=UI.selGym;const c=cats();const ed=UI.editMode;const nb=Object.keys(PE).length;
   let html='';
 
-  // Chips gymnases
-  html+='<div class="gscroll">';
-  html+='<button class="gc '+(gid==='tous'?'on':'')+'" onclick="selGym(\'tous\')">🏆 Tous</button>';
-  DB.gymnases.forEach(function(g){
-    const label=isMob()?g.nom.split(' ').slice(0,2).join(' '):g.nom;
-    html+='<button class="gc '+(gid===g.id?'on':'')+'" onclick="selGym(\''+g.id+'\')">' +label+'</button>';
-  });
-  html+='</div>';
+  html+=rGymButtons(gid);
+  
 
   // Boutons modifier/enregistrer (sauf vue Tous)
   if(gid!=='tous'){

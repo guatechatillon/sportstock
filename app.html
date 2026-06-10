@@ -425,6 +425,12 @@ function rmap(){
 const TLBL={dash:'Tableau de bord',gyms:'Gymnases',stock:'Stock',mvts:'Mouvements'};
 
 function showTab(t){
+  // Si on reclique sur Stock depuis Stock, revenir à la vue boutons
+  if(t==='stock' && UI.tab==='stock'){
+    UI.selGym=null;UI.editMode=false;PE={};
+    render('stock');
+    return;
+  }
   UI.tab=t;
   if(t!=='stock'){UI.editMode=false;PE={};}
   ['dash','gyms','stock','mvts'].forEach(x=>{
@@ -582,7 +588,7 @@ function gymColor(nom){
   if(n.includes('sablons')) return {bg:'#ca8a04',txt:'#ffffff',border:'#a16207'};
   if(n.includes('gambetta')) return {bg:'#dc2626',txt:'#ffffff',border:'#b91c1c'};
   if(n.includes('langevin')||n.includes('wallon')) return {bg:'#1d4ed8',txt:'#ffffff',border:'#1e40af'};
-  if(n.includes('rep')) return {bg:'#6b7280',txt:'#ffffff',border:'#4b5563'};
+  if(n.includes('rep')) return {bg:'#374151',txt:'#ffffff',border:'#1f2937'};
   return {bg:'var(--bg2)',txt:'var(--txt)',border:'var(--border2)'};
 }
 
@@ -633,6 +639,8 @@ function rGymButtons(gid){
       var gb=document.getElementById('gbtn_'+g.id);
       if(gb) gb.onclick=function(){selGym(g.id);};
     });
+    var rb=document.getElementById('btn-retour-gyms');
+    if(rb) rb.onclick=function(){UI.selGym=null;render('stock');};
   },0);
 
   return h;

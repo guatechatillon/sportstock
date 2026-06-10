@@ -572,6 +572,71 @@ function rGyms(){
 }
 
 // STOCK
+// Couleurs par gymnase
+function gymColor(nom){
+  const n=(nom||'').toLowerCase();
+  if(n.includes('joliot')) return {bg:'#1a1a1a',txt:'#ffffff',border:'#000000'};
+  if(n.includes('baquet')||n.includes('vastel')) return {bg:'#7c3aed',txt:'#ffffff',border:'#6d28d9'};
+  if(n.includes('marcel')||n.includes('doret')) return {bg:'#166534',txt:'#ffffff',border:'#15803d'};
+  if(n.includes('sablons')) return {bg:'#ca8a04',txt:'#ffffff',border:'#a16207'};
+  if(n.includes('gambetta')) return {bg:'#dc2626',txt:'#ffffff',border:'#b91c1c'};
+  if(n.includes('langevin')||n.includes('wallon')) return {bg:'#1d4ed8',txt:'#ffffff',border:'#1e40af'};
+  if(n.includes('rep')) return {bg:'#6b7280',txt:'#ffffff',border:'#4b5563'};
+  return {bg:'var(--bg2)',txt:'var(--txt)',border:'var(--border2)'};
+}
+
+function rGymButtons(gid){
+  const mob=isMob();
+  const cols=mob?2:4;
+  const grandTotal=DB.materiels.reduce(function(a,m){return a+totM(m.id);},0);
+  let h='<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:10px;margin-bottom:16px">';
+
+  // Bouton Tous
+  const tousActive=gid==='tous';
+  const tShadow=tousActive?'0 0 0 3px rgba(124,58,237,.25)':'0 1px 3px rgba(0,0,0,.08)';
+  const tBorder=tousActive?'2.5px solid #7c3aed':'1.5px solid #cccccc';
+  h+='<button id="gbtn_tous" style="background:#ffffff;color:#333;border:'+tBorder+';border-radius:12px;padding:14px 10px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:'+tShadow+'">';
+  h+='<div style="font-size:20px;margin-bottom:4px">🏆</div>';
+  h+='<div style="font-size:13px;font-weight:700;margin-bottom:2px">Tous</div>';
+  h+='<div style="font-size:11px;opacity:.7">'+grandTotal+' pièces</div>';
+  h+='</button>';
+
+  DB.gymnases.forEach(function(g){
+    const c=gymColor(g.nom);
+    const active=gid===g.id;
+    const tot=totG(g.id);
+    const low=DB.materiels.some(function(m){const q=gs(g.id,m.id);return q>0&&q<4;});
+    const rupt=DB.materiels.some(function(m){return gs(g.id,m.id)===0;});
+    const pct=DB.materiels.length>0?Math.min(100,Math.round(tot/(DB.materiels.length*15)*100)):0;
+    const shortName=mob?g.nom.split(' ').slice(0,2).join(' '):g.nom;
+    const shadow=active?'0 0 0 3px rgba(0,0,0,.2)':'0 1px 3px rgba(0,0,0,.12)';
+    const bdr=active?'2.5px':'1.5px';
+    const barA=c.txt==='#ffffff'?'rgba(255,255,255,.25)':'rgba(0,0,0,.15)';
+    const barF=c.txt==='#ffffff'?'rgba(255,255,255,.8)':'rgba(0,0,0,.5)';
+    h+='<button id="gbtn_'+g.id+'" style="background:'+c.bg+';color:'+c.txt+';border:'+bdr+' solid '+c.border+';border-radius:12px;padding:14px 10px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:'+shadow+';position:relative">';
+    if(rupt) h+='<span style="position:absolute;top:5px;right:5px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px">Rupture</span>';
+    else if(low) h+='<span style="position:absolute;top:5px;right:5px;background:#f59e0b;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px">Faible</span>';
+    h+='<div style="font-size:18px;margin-bottom:4px">🏛️</div>';
+    h+='<div style="font-size:12px;font-weight:700;margin-bottom:3px;line-height:1.3">'+shortName+'</div>';
+    h+='<div style="font-size:11px;opacity:.85;margin-bottom:6px">'+tot+' pcs</div>';
+    h+='<div style="width:100%;background:'+barA+';border-radius:20px;height:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+barF+';border-radius:20px"></div></div>';
+    h+='</button>';
+  });
+  h+='</div>';
+
+  // Ajouter les listeners après rendu
+  setTimeout(function(){
+    var tb=document.getElementById('gbtn_tous');
+    if(tb) tb.onclick=function(){selGym('tous');};
+    DB.gymnases.forEach(function(g){
+      var gb=document.getElementById('gbtn_'+g.id);
+      if(gb) gb.onclick=function(){selGym(g.id);};
+    });
+  },0);
+
+  return h;
+}
+
 function rStock(){
   const gid=UI.selGym;const c=cats();const ed=UI.editMode;const nb=Object.keys(PE).length;
   let html='';

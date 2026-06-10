@@ -425,7 +425,8 @@ function rmap(){
 const TLBL={dash:'Tableau de bord',gyms:'Gymnases',stock:'Stock',mvts:'Mouvements'};
 
 function showTab(t){
-  UI.tab=t;if(t!=='stock'){UI.editMode=false;PE={};}
+  UI.tab=t;
+  if(t!=='stock'){UI.editMode=false;PE={};}
   ['dash','gyms','stock','mvts'].forEach(x=>{
     const d=document.getElementById(`nav-${x}`);if(d)d.classList.toggle('active',x===t);
     const m=document.getElementById(`m-nav-${x}`);if(m)m.classList.toggle('active',x===t);
@@ -640,9 +641,24 @@ function rGymButtons(gid){
 function rStock(){
   const gid=UI.selGym;const c=cats();const ed=UI.editMode;const nb=Object.keys(PE).length;
   let html='';
+  // Afficher seulement les boutons si aucun gymnase sélectionné
+  if(!gid){
+    html+=rGymButtons(null);
+    html+='<div style="text-align:center;padding:40px 20px;color:var(--txt2)">';
+    html+='<i class="ti ti-hand-click" style="font-size:48px;display:block;margin-bottom:12px;opacity:.3"></i>';
+    html+='<p style="font-size:14px">Sélectionnez un gymnase pour voir son stock</p>';
+    html+='</div>';
+    return html;
+  }
 
-  html+=rGymButtons(gid);
-  
+  // Chips gymnases
+  html+='<div class="gscroll">';
+  html+='<button class="gc '+(gid==='tous'?'on':'')+'" onclick="selGym(\'tous\')">🏆 Tous</button>';
+  DB.gymnases.forEach(function(g){
+    const label=isMob()?g.nom.split(' ').slice(0,2).join(' '):g.nom;
+    html+='<button class="gc '+(gid===g.id?'on':'')+'" onclick="selGym(\''+g.id+'\')">' +label+'</button>';
+  });
+  html+='</div>';
 
   // Boutons modifier/enregistrer (sauf vue Tous)
   if(gid!=='tous'){
@@ -1550,7 +1566,7 @@ async function init(){
     });
     if(migrated){ markDirty(); }
 
-    if(!UI.selGym && DB.gymnases.length>0) UI.selGym = DB.gymnases[0].id;
+    if(UI.selGym===null && DB.gymnases.length>0) UI.selGym = null; // Pas de sélection par défaut
     const c=cats();Object.keys(c).forEach(k=>{if(UI.openCats[k]===undefined)UI.openCats[k]=true;});
     // Init openCats pour activites
     Object.keys(actCats()).forEach(k=>{if(UI.openCats['act_'+k]===undefined)UI.openCats['act_'+k]=true;});

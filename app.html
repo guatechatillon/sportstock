@@ -217,7 +217,7 @@ select.fi{cursor:pointer}
     </div>
     <nav class="sb-nav">
       <button class="nav-item active" onclick="showTab('dash')" id="nav-dash"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Tableau de bord</button>
-      <button class="nav-item" onclick="showTab('gyms')" id="nav-gyms"><i class="ti ti-building-community" aria-hidden="true"></i>Gymnases</button>
+
       <button class="nav-item" onclick="showTab('stock')" id="nav-stock"><i class="ti ti-package" aria-hidden="true"></i>Stock</button>
       <button class="nav-item" onclick="showTab('mvts')" id="nav-mvts"><i class="ti ti-arrows-exchange" aria-hidden="true"></i>Mouvements</button>
     </nav>
@@ -259,7 +259,7 @@ select.fi{cursor:pointer}
   <div id="content-mob"></div>
   <nav id="botnav">
     <button class="bnav on" onclick="showTab('dash')" id="m-nav-dash"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Accueil</button>
-    <button class="bnav" onclick="showTab('gyms')" id="m-nav-gyms"><i class="ti ti-building-community" aria-hidden="true"></i>Gymnases</button>
+
     <button class="bnav" onclick="showTab('stock')" id="m-nav-stock"><i class="ti ti-package" aria-hidden="true"></i>Stock</button>
     <button class="bnav" onclick="showTab('mvts')" id="m-nav-mvts"><i class="ti ti-arrows-exchange" aria-hidden="true"></i>Mouvements</button>
   </nav>
@@ -445,7 +445,7 @@ function buildTopAct(t){
   const el=document.getElementById('topbar-actions');
   if(el){
     const btnMvt='<button class="btn btn-p btn-sm" onclick="openM(&quot;mvt&quot;)"><i class="ti ti-plus"></i> Mouvement</button>';
-    const btnGym='<button class="btn btn-p btn-sm" onclick="openM(&quot;addGym&quot;)"><i class="ti ti-plus"></i> Gymnase</button>';
+    const btnGym='';
     if(t==='dash')el.innerHTML=btnMvt;
     else if(t==='gyms')el.innerHTML=btnGym;
     else if(t==='stock')el.innerHTML='<div id="stock-act"></div>';
@@ -588,7 +588,7 @@ function gymColor(nom){
   if(n.includes('sablons')) return {bg:'#ca8a04',txt:'#ffffff',border:'#a16207'};
   if(n.includes('gambetta')) return {bg:'#dc2626',txt:'#ffffff',border:'#b91c1c'};
   if(n.includes('langevin')||n.includes('wallon')) return {bg:'#1d4ed8',txt:'#ffffff',border:'#1e40af'};
-  if(n.includes('rep')) return {bg:'#737373',txt:'#ffffff',border:'#1f2937'};
+  if(n.includes('rep')) return {bg:'#374151',txt:'#ffffff',border:'#1f2937'};
   return {bg:'var(--bg2)',txt:'var(--txt)',border:'var(--border2)'};
 }
 
@@ -596,17 +596,17 @@ function rGymButtons(gid){
   const mob=isMob();
   const cols=mob?2:4;
   const grandTotal=DB.materiels.reduce(function(a,m){return a+totM(m.id);},0);
-  let h='';
+  let h='<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:10px;margin-bottom:16px">';
 
   // Bouton Tous
   const tousActive=gid==='tous';
   const tShadow=tousActive?'0 0 0 3px rgba(124,58,237,.25)':'0 1px 3px rgba(0,0,0,.08)';
   const tBorder=tousActive?'2.5px solid #7c3aed':'1.5px solid #cccccc';
-  h+='<button id="gbtn_tous" style="width:100%;background:#ffffff;color:#333;border:'+tBorder+';border-radius:12px;padding:14px 20px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:'+tShadow+';margin-bottom:10px">';
+  h+='<button id="gbtn_tous" style="background:#ffffff;color:#333;border:'+tBorder+';border-radius:12px;padding:14px 10px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:'+tShadow+'">';
   h+='<div style="font-size:20px;margin-bottom:4px">🏆</div>';
   h+='<div style="font-size:13px;font-weight:700;margin-bottom:2px">Tous</div>';
   h+='<div style="font-size:11px;opacity:.7">'+grandTotal+' pièces</div>';
-  h+='</button>';h+='<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:10px;margin-bottom:16px">';
+  h+='</button>';
 
   DB.gymnases.forEach(function(g){
     const c=gymColor(g.nom);
@@ -629,7 +629,7 @@ function rGymButtons(gid){
     h+='<div style="width:100%;background:'+barA+';border-radius:20px;height:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+barF+';border-radius:20px"></div></div>';
     h+='</button>';
   });
-  h+='</div></div>';
+  h+='</div>';
 
   // Ajouter les listeners après rendu
   setTimeout(function(){
@@ -641,6 +641,8 @@ function rGymButtons(gid){
     });
     var rb=document.getElementById('btn-retour-gyms');
     if(rb) rb.onclick=function(){UI.selGym=null;render('stock');};
+    var ab=document.getElementById('gbtn_add');
+    if(ab) ab.onclick=function(){openM('addGym');};
   },0);
 
   return h;

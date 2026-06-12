@@ -609,7 +609,7 @@ function rGymButtons(gid){
   h+='</button>';
 
   DB.gymnases.forEach(function(g){
-    const c=gymColor(g.nom);
+    const c=gymColor(g.nom,g);
     const active=gid===g.id;
     const tot=totG(g.id);
     const low=DB.materiels.some(function(m){const q=gs(g.id,m.id);return q>0&&q<4;});
@@ -629,7 +629,7 @@ function rGymButtons(gid){
     h+='<div style="width:100%;background:'+barA+';border-radius:20px;height:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+barF+';border-radius:20px"></div></div>';
     h+='</button>';
   });
-  h+='</div>';h+='<button id="gbtn_manage" style="display:inline-flex;align-items:center;width:48px;height:48px;background:#e879a0;border:none;border-radius:50%;font-size:22px;cursor:pointer;font-family:inherit;color:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ti-plus"></i></button>';
+  h+='</div>';
 
   // Ajouter les listeners après rendu
   setTimeout(function(){
@@ -1030,7 +1030,7 @@ function openM(type,id){
   else if(type==='renGym')root.innerHTML=mRenGym(id);
   else if(type==='addMat')root.innerHTML=mAddMat();
   else if(type==='editSt')root.innerHTML=mEditSt(id);
-else if(type==='import')root.innerHTML=mImport();else if(type==='manageGyms')root.innerHTML=mManageGyms();
+  else if(type==='import')root.innerHTML=mImport();
   setTimeout(()=>{if(type==='mvt'){fillMats();toggleDest('prise');}},0);
 }
 function closeM(){document.getElementById('mr').innerHTML='';}
@@ -1101,7 +1101,7 @@ function saveMvt(){
 function mManageGyms(){
   let rows='';
   DB.gymnases.forEach(function(g){
-    const c=gymColor(g.nom);
+    const c=gymColor(g.nom,g);
     rows+='<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border)">';
     rows+='<div style="width:32px;height:32px;border-radius:8px;background:'+c.bg+';border:1px solid '+c.border+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-building-community" style="color:'+c.txt+';font-size:14px"></i></div>';
     rows+='<span style="flex:1;font-size:13px;font-weight:500">'+g.nom+'</span>';
@@ -1111,7 +1111,7 @@ function mManageGyms(){
   });
   const html='<div class="mo" onclick="if(event.target===this)closeM()">'
     +'<div class="ms" style="max-width:480px">'
-    +'<div class="mh"><h3><i class="ti ti-settings" style="color:var(--blue)"></i> Gérer les espaces</h3><button class="btn btn-ico" onclick="closeM()"><i class="ti ti-x"></i></button></div>'
+    +'<div class="mh"><h3><i class="ti ti-settings" style="color:var(--blue)"></i> Gérer les gymnases</h3><button class="btn btn-ico" onclick="closeM()"><i class="ti ti-x"></i></button></div>'
     +'<div class="mb">'
     +'<div style="margin-bottom:14px">'+rows+'</div>'
     +'<button id="add_gym_btn" style="width:100%;height:40px;border:1.5px dashed var(--border2);border-radius:var(--r2);background:var(--bg3);color:var(--txt2);font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px"><i class="ti ti-plus"></i> Ajouter un gymnase</button>'
@@ -1133,18 +1133,66 @@ function mManageGyms(){
 }
 
 function mAddGym(){
-  return `<div class="mo" onclick="if(event.target===this)closeM()">
-  <div class="ms">
-    <div class="mh"><h3>Nouveau gymnase</h3><button class="btn btn-ico" onclick="closeM()"><i class="ti ti-x" aria-hidden="true"></i></button></div>
-    <div class="mb"><div class="fg"><label class="fl">Nom</label><input type="text" id="gn" class="fi" placeholder="Ex: Gymnase Jean Jaurès" autocomplete="off"></div></div>
-    <div class="mf"><button class="btn" onclick="closeM()">Annuler</button><button class="btn btn-p" onclick="saveGym()"><i class="ti ti-check" aria-hidden="true"></i> Ajouter</button></div>
-  </div></div>`;
+  const colors=[
+    {name:'Noir',bg:'#1a1a1a',txt:'#ffffff',border:'#000000'},
+    {name:'Violet',bg:'#7c3aed',txt:'#ffffff',border:'#6d28d9'},
+    {name:'Vert',bg:'#166534',txt:'#ffffff',border:'#15803d'},
+    {name:'Jaune',bg:'#ca8a04',txt:'#ffffff',border:'#a16207'},
+    {name:'Rouge',bg:'#dc2626',txt:'#ffffff',border:'#b91c1c'},
+    {name:'Bleu',bg:'#1d4ed8',txt:'#ffffff',border:'#1e40af'},
+    {name:'Gris',bg:'#737373',txt:'#ffffff',border:'#525252'},
+    {name:'Rose',bg:'#db2777',txt:'#ffffff',border:'#be185d'},
+    {name:'Orange',bg:'#ea580c',txt:'#ffffff',border:'#c2410c'},
+    {name:'Turquoise',bg:'#0891b2',txt:'#ffffff',border:'#0e7490'},
+    {name:'Blanc',bg:'#ffffff',txt:'#333333',border:'#cccccc'},
+  ];
+  const swatches=colors.map(function(c,i){
+    return '<button type="button" id="col_'+i+'" onclick="selColor('+i+')" style="width:32px;height:32px;background:'+c.bg+';border:2.5px solid '+c.border+';border-radius:8px;cursor:pointer;transition:transform .1s" title="'+c.name+'"></button>';
+  }).join('');
+  return '<div class="mo" onclick="if(event.target===this)closeM()">'
+    +'<div class="ms">'
+    +'<div class="mh"><h3>Nouvel espace</h3><button class="btn btn-ico" onclick="closeM()"><i class="ti ti-x" aria-hidden="true"></i></button></div>'
+    +'<div class="mb">'
+    +'<div class="fg"><label class="fl">Nom</label><input type="text" id="gn" class="fi" placeholder="Ex: Salle polyvalente" autocomplete="off"></div>'
+    +'<div class="fg"><label class="fl">Couleur</label>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px" id="color-swatches">'+swatches+'</div>'
+    +'<input type="hidden" id="g-color" value="0">'
+    +'</div>'
+    +'</div>'
+    +'<div class="mf"><button class="btn" onclick="closeM()">Annuler</button><button class="btn btn-p" onclick="saveGym()"><i class="ti ti-check" aria-hidden="true"></i> Ajouter</button></div>'
+    +'</div></div>';
+}
+
+// Sélecteur de couleur
+const GYM_COLORS_LIST=[
+  {name:'Noir',bg:'#1a1a1a',txt:'#ffffff',border:'#000000'},
+  {name:'Violet',bg:'#7c3aed',txt:'#ffffff',border:'#6d28d9'},
+  {name:'Vert',bg:'#166534',txt:'#ffffff',border:'#15803d'},
+  {name:'Jaune',bg:'#ca8a04',txt:'#ffffff',border:'#a16207'},
+  {name:'Rouge',bg:'#dc2626',txt:'#ffffff',border:'#b91c1c'},
+  {name:'Bleu',bg:'#1d4ed8',txt:'#ffffff',border:'#1e40af'},
+  {name:'Gris',bg:'#737373',txt:'#ffffff',border:'#525252'},
+  {name:'Rose',bg:'#db2777',txt:'#ffffff',border:'#be185d'},
+  {name:'Orange',bg:'#ea580c',txt:'#ffffff',border:'#c2410c'},
+  {name:'Turquoise',bg:'#0891b2',txt:'#ffffff',border:'#0e7490'},
+  {name:'Blanc',bg:'#ffffff',txt:'#333333',border:'#cccccc'},
+];
+function selColor(i){
+  document.getElementById('g-color').value=i;
+  GYM_COLORS_LIST.forEach(function(_,j){
+    var b=document.getElementById('col_'+j);
+    if(b) b.style.transform=j===i?'scale(1.3)':'scale(1)';
+    if(b) b.style.boxShadow=j===i?'0 0 0 3px rgba(0,0,0,.3)':'none';
+  });
 }
 function saveGym(){
   const nom=document.getElementById('gn').value.trim();if(!nom){toast('Entrez un nom');return;}
-  const id='g'+uid();DB.gymnases.push({id,nom});
-  DB.materiels.forEach(m=>{DB.stocks[`${id}_${m.id}`]=0;});
-  markDirty();closeM();toast(`${nom} ajouté`);render('gyms');
+  const colorIdx=parseInt(document.getElementById('g-color')?.value||'0');
+  const colorData=GYM_COLORS_LIST[colorIdx]||GYM_COLORS_LIST[0];
+  const id='g'+uid();
+  DB.gymnases.push({id,nom,color:colorData});
+  DB.materiels.forEach(m=>{DB.stocks[id+'_'+m.id]=0;});
+  markDirty();closeM();toast(nom+' ajouté');render('stock');
 }
 function delGym(gid){
   const g=DB.gymnases.find(x=>x.id===gid);if(!confirm(`Supprimer ${g.nom} ?`))return;

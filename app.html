@@ -581,7 +581,7 @@ function rGyms(){
 
 // STOCK
 // Couleurs par gymnase
-function gymColor(nom,gymObj){if(gymObj&&gymObj.color&&gymObj.color.bg)return gymObj.color;
+function gymColor(nom){
   const n=(nom||'').toLowerCase();
   if(n.includes('joliot')) return {bg:'#1a1a1a',txt:'#ffffff',border:'#000000'};
   if(n.includes('baquet')||n.includes('vastel')) return {bg:'#7c3aed',txt:'#ffffff',border:'#6d28d9'};
@@ -617,20 +617,23 @@ function rGymButtons(gid){
     const rupt=DB.materiels.some(function(m){return gs(g.id,m.id)===0;});
     const pct=DB.materiels.length>0?Math.min(100,Math.round(tot/(DB.materiels.length*15)*100)):0;
     const shortName=mob?g.nom.split(' ').slice(0,2).join(' '):g.nom;
-    const shadow=active?'0 0 0 3px rgba(0,0,0,.2)':'0 1px 3px rgba(0,0,0,.12)';
-    const bdr=active?'2.5px':'1.5px';
-    const barA=c.txt==='#ffffff'?'rgba(255,255,255,.25)':'rgba(0,0,0,.15)';
-    const barF=c.txt==='#ffffff'?'rgba(255,255,255,.8)':'rgba(0,0,0,.5)';
-    h+='<button id="gbtn_'+g.id+'" style="background:'+c.bg+';color:'+c.txt+';border:'+bdr+' solid '+c.border+';border-radius:12px;padding:14px 10px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:'+shadow+';position:relative">';
+    const shadow=active?'0 0 0 3px rgba(255,255,255,.5),0 8px 32px rgba(0,0,0,.15)':'0 4px 16px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.4)';
+    const bdr=active?'2px':'1px';
+    const barA='rgba(255,255,255,.25)';
+    const barF='rgba(255,255,255,.8)';
+    // Couleur de fond cristalline : mélange de la couleur + transparence
+    const bgCrystal=c.bg+'; backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)';
+    h+='<button id="gbtn_'+g.id+'" style="background:'+c.bg+';color:'+c.txt+';border:'+bdr+' solid rgba(255,255,255,.4);border-radius:16px;padding:14px 10px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:'+shadow+';position:relative;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:all .2s">';
     if(rupt) h+='<span style="position:absolute;top:5px;right:5px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px">Rupture</span>';
     else if(low) h+='<span style="position:absolute;top:5px;right:5px;background:#f59e0b;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px">Faible</span>';
+    h+='<div style="position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg,rgba(255,255,255,.2) 0%,transparent 100%);border-radius:16px 16px 0 0;pointer-events:none"></div>';
     h+='<div style="font-size:18px;margin-bottom:4px">🏛️</div>';
     h+='<div style="font-size:12px;font-weight:700;margin-bottom:3px;line-height:1.3">'+shortName+'</div>';
     h+='<div style="font-size:11px;opacity:.85;margin-bottom:6px">'+tot+' pcs</div>';
     h+='<div style="width:100%;background:'+barA+';border-radius:20px;height:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+barF+';border-radius:20px"></div></div>';
     h+='</button>';
   });
-  h+='</div>';h+='<button id="gbtn_manage" style="width:48px;height:48px;background:#e879a0;border:none;border-radius:50%;font-size:22px;cursor:pointer;font-family:inherit;color:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ti-settings"></i></button>';
+  h+='</div>';
 
   // Ajouter les listeners après rendu
   setTimeout(function(){
@@ -1031,7 +1034,7 @@ function openM(type,id){
   else if(type==='renGym')root.innerHTML=mRenGym(id);
   else if(type==='addMat')root.innerHTML=mAddMat();
   else if(type==='editSt')root.innerHTML=mEditSt(id);
-  else if(type==='import')root.innerHTML=mImport();else if(type==='manageGyms')root.innerHTML=mManageGyms();
+  else if(type==='import')root.innerHTML=mImport();
   setTimeout(()=>{if(type==='mvt'){fillMats();toggleDest('prise');}},0);
 }
 function closeM(){document.getElementById('mr').innerHTML='';}

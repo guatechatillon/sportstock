@@ -1199,7 +1199,7 @@ function delGym(gid){
   DB.gymnases=DB.gymnases.filter(x=>x.id!==gid);
   DB.materiels.forEach(m=>delete DB.stocks[`${gid}_${m.id}`]);
   if(UI.selGym===gid)UI.selGym=DB.gymnases[0]?.id;
-  markDirty();render('gyms');
+  markDirty();render('stock');
 }
 
 function mRenGym(gid){

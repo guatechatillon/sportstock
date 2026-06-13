@@ -597,17 +597,17 @@ function rGymButtons(gid){
   const mob=isMob();
   const cols=mob?2:4;
   const grandTotal=DB.materiels.reduce(function(a,m){return a+totM(m.id);},0);
-  let h='<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:10px;margin-bottom:16px">';
+  let h='';
 
   // Bouton Tous
   const tousActive=gid==='tous';
   const tShadow=tousActive?'0 0 0 3px rgba(124,58,237,.25)':'0 1px 3px rgba(0,0,0,.08)';
   const tBorder=tousActive?'2.5px solid #7c3aed':'1.5px solid #cccccc';
-  h+='<button id="gbtn_tous" style="background:#ffffff;color:#333;border:'+tBorder+';border-radius:12px;padding:14px 10px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:'+tShadow+'">';
+h+='<button id="gbtn_tous" style="width:100%;background:rgba(255,255,255,0.35);backdrop-filter:blur(16px);color:#1a1a2e;border:1px solid rgba(255,255,255,0.6);border-radius:16px;padding:14px 20px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;box-shadow:0 4px 16px rgba(0,0,0,.08);transition:all .2s">';
   h+='<div style="font-size:20px;margin-bottom:4px">🏆</div>';
   h+='<div style="font-size:13px;font-weight:700;margin-bottom:2px">Tous</div>';
   h+='<div style="font-size:11px;opacity:.7">'+grandTotal+' pièces</div>';
-  h+='</button>';
+  h+='</button>';h+='<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:10px;margin-bottom:12px">';
 
   DB.gymnases.forEach(function(g){
     const c=gymColor(g.nom,g);

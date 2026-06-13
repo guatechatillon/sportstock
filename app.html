@@ -1034,7 +1034,7 @@ function openM(type,id){
   else if(type==='renGym')root.innerHTML=mRenGym(id);
   else if(type==='addMat')root.innerHTML=mAddMat();
   else if(type==='editSt')root.innerHTML=mEditSt(id);
-  else if(type==='import')root.innerHTML=mImport();
+  else if(type==='import')root.innerHTML=mImport();else if(type==='manageGyms')root.innerHTML=mManageGyms();
   setTimeout(()=>{if(type==='mvt'){fillMats();toggleDest('prise');}},0);
 }
 function closeM(){document.getElementById('mr').innerHTML='';}
